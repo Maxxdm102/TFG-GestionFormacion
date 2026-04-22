@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión Formación</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/tareas.css">
+<link rel="stylesheet" href="css/clientes.css">
+<link rel="stylesheet" href="css/modulos.css">
+</head>
+<body>
+
+<!-- ══ TITLE BAR ══ -->
+<!-- Hidden folder picker -->
+<!-- Toast notification -->
+<!-- Hidden folder picker -->
+
+
+<!-- ══ LAYOUT WRAPPER ══ -->
+<div class="app-layout">
+
+<!-- ══ MAIN CONTENT AREA ══ -->
+<div class="app-content">
+
+<div id="menu-overlay"></div>
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: TAREAS
+════════════════════════════════════════════════════════════ -->
+<div class="page active" id="page-tareas">
+
+  <!-- Menubar -->
+  <div class="menubar">
+    <div class="menu-item" id="menu-general">
+      <button class="menu-btn" onclick="toggleMenu('general')">General</button>
+      <div class="dropdown" id="dd-general">
+        <div class="dropdown-section-label">Acciones</div>
+        <button class="dropdown-item" onclick="openTareaWindow('nuevo')"><span class="item-icon icon-blue">✨</span> Nuevo</button>
+        <button class="dropdown-item" onclick="openModal('ver')"><span class="item-icon icon-gray">👁</span> Ver</button>
+        <button class="dropdown-item" onclick="openTareaWindow('modificar')"><span class="item-icon icon-orange">✏️</span> Modificar tarea</button>
+        <button class="dropdown-item danger" onclick="eliminarTarea()"><span class="item-icon icon-red">🗑</span> Eliminar</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" onclick="duplicarTarea()"><span class="item-icon icon-gray">⧉</span> Duplicar</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item danger"><span class="item-icon icon-red">🚪</span> Salir</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-ver">
+      <button class="menu-btn" onclick="toggleMenu('ver')">Ver</button>
+      <div class="dropdown" id="dd-ver">
+        <button class="dropdown-item" onclick="refrescarTareas()"><span class="item-icon icon-blue">🔄</span> Refrescar</button>
+        <button class="dropdown-item" onclick="openTiemposWindow()"><span class="item-icon icon-purple">⏱</span> Ver tiempos</button>
+        <button class="dropdown-item" onclick="toggleTareasFiltros()"><span class="item-icon icon-orange">🔍</span> Filtros</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-archivos">
+      <button class="menu-btn" onclick="toggleMenu('archivos')">Archivos</button>
+      <div class="dropdown" id="dd-archivos">
+        <button class="dropdown-item"><span class="item-icon icon-gray">📂</span> Ver archivos en menú</button>
+        <button class="dropdown-item"><span class="item-icon icon-gray">📄</span> Ver archivos</button>
+        <button class="dropdown-item"><span class="item-icon icon-gray">🔍</span> Ver archivos con visor</button>
+        <button class="dropdown-item"><span class="item-icon icon-gray">🌳</span> Ver árbol de archivos</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item"><span class="item-icon icon-blue">➕</span> Nuevo archivo</button>
+        <button class="dropdown-item"><span class="item-icon icon-blue">📎</span> Nuevo archivo elementos seleccionados</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item"><span class="item-icon icon-green">✍️</span> Archivos firma digital</button>
+        <button class="dropdown-item"><span class="item-icon icon-orange">📝</span> Solicitudes firma digital</button>
+        <button class="dropdown-item"><span class="item-icon icon-red">🔒</span> Bloquear propietario</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-avisos">
+      <button class="menu-btn" onclick="toggleMenu('avisos')">Avisos</button>
+      <div class="dropdown" id="dd-avisos">
+        <button class="dropdown-item"><span class="item-icon icon-orange">🔔</span> Avisos</button>
+        <button class="dropdown-item"><span class="item-icon icon-blue">📧</span> Enviar email</button>
+        <button class="dropdown-item"><span class="item-icon icon-green">💬</span> Enviar SMS</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item"><span class="item-icon icon-gray">📋</span> Registro de avisos</button>
+        <button class="dropdown-item"><span class="item-icon icon-purple">📐</span> Plantillas de envío</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <button class="tool-btn" title="Nuevo" onclick="openTareaWindow('nuevo')">✨</button>
+      <button class="tool-btn" title="Ver" onclick="openModal('ver')">👁</button>
+      <button class="tool-btn" title="Modificar" onclick="openTareaWindow('modificar')">✏️</button>
+      <button class="tool-btn" title="Subir prioridad" onclick="subirPrioridad()">↑</button>
+      <button class="tool-btn" title="Bajar prioridad" onclick="bajarPrioridad()">↓</button>
+      <button class="tool-btn" title="Eliminar" style="color:var(--danger)" onclick="eliminarTarea()">🗑</button>
+      <button class="tool-btn" title="Duplicar" onclick="duplicarTarea()">⧉</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn active" title="Refrescar" onclick="refrescarTareas()">🔄</button>
+      <button class="tool-btn" title="Ver tiempos" onclick="openTiemposWindow()">⏱</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn" title="Archivos">📂</button>
+      <button class="tool-btn" title="Nuevo archivo">📎</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn" title="Avisos">🔔</button>
+      <button class="tool-btn" title="Enviar email">📧</button>
+      <button class="tool-btn" title="Enviar SMS">💬</button>
+    </div>
+    <div class="toolbar-group">
+      <button class="tool-btn" id="btn-tareas-filtros" title="Filtros" onclick="toggleTareasFiltros()">🔍</button>
+      <button class="tool-btn" title="Buscar">🔎</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="tareas-filter-panel" id="tareas-filter-panel">
+    <div class="tfilter-grid">
+
+      <!-- COL 1: Asignada, Creada, Cliente, Presupuesto, Albarán, Factura -->
+      <div class="tfilter-col">
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-asignada" checked class="tf-toggle" data-controls="tf-asignada-sel">
+          <label for="tf-asignada">Asignada a</label>
+          <select id="tf-asignada-sel"><option value="">— Todos —</option></select>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-creada" class="tf-toggle" data-controls="tf-creada-sel">
+          <label for="tf-creada">Creada por</label>
+          <select id="tf-creada-sel" class="tfilter-hidden"><option value="">— Todos —</option></select>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-cliente" class="tf-toggle" data-controls="tf-cliente-txt">
+          <label for="tf-cliente">Cliente</label>
+          <input type="text" id="tf-cliente-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-presupuesto" class="tf-toggle" data-controls="tf-presupuesto-txt">
+          <label for="tf-presupuesto">Presupuesto</label>
+          <input type="text" id="tf-presupuesto-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-albaran" class="tf-toggle" data-controls="tf-albaran-txt">
+          <label for="tf-albaran">Albarán</label>
+          <input type="text" id="tf-albaran-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-factura" class="tf-toggle" data-controls="tf-factura-txt">
+          <label for="tf-factura">Factura</label>
+          <input type="text" id="tf-factura-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+      </div>
+
+      <!-- COL 2: Activo, Fecha creación, F.entrega, Iniciada, Finalizada, Comprobada, Con tiempos -->
+      <div class="tfilter-col">
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-activo">
+          <label for="tf-activo">Activo</label>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-fecha-crea" class="tf-toggle" data-controls="tf-fecha-crea-desde tf-fecha-crea-a tf-fecha-crea-hasta">
+          <label for="tf-fecha-crea">Fecha creacion</label>
+          <input type="date" id="tf-fecha-crea-desde" class="tfilter-date tfilter-hidden">
+          <span class="tfilter-a tfilter-hidden" id="tf-fecha-crea-a">a</span>
+          <input type="date" id="tf-fecha-crea-hasta" class="tfilter-date tfilter-hidden">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-fecha-ent" class="tf-toggle" data-controls="tf-fecha-ent-si tf-fecha-ent-desde tf-fecha-ent-a tf-fecha-ent-hasta">
+          <label for="tf-fecha-ent">F. entrega</label>
+          <select id="tf-fecha-ent-si" class="tfilter-si tfilter-hidden"><option value="si">Sí</option><option value="no">No</option></select>
+          <input type="date" id="tf-fecha-ent-desde" class="tfilter-date tfilter-hidden">
+          <span class="tfilter-a tfilter-hidden" id="tf-fecha-ent-a">a</span>
+          <input type="date" id="tf-fecha-ent-hasta" class="tfilter-date tfilter-hidden">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-iniciada" class="tf-toggle" data-controls="tf-iniciada-si tf-iniciada-desde tf-iniciada-a tf-iniciada-hasta">
+          <label for="tf-iniciada">Iniciada</label>
+          <select id="tf-iniciada-si" class="tfilter-si tfilter-hidden"><option value="si">Sí</option><option value="no">No</option></select>
+          <input type="date" id="tf-iniciada-desde" class="tfilter-date tfilter-hidden">
+          <span class="tfilter-a tfilter-hidden" id="tf-iniciada-a">a</span>
+          <input type="date" id="tf-iniciada-hasta" class="tfilter-date tfilter-hidden">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-finalizada" class="tf-toggle" data-controls="tf-finalizada-si">
+          <label for="tf-finalizada">Finalizada</label>
+          <select id="tf-finalizada-si" class="tfilter-si tfilter-hidden"><option value="no">No</option><option value="si">Sí</option></select>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-comprobada" class="tf-toggle" data-controls="tf-comprobada-si tf-comprobada-desde tf-comprobada-a tf-comprobada-hasta">
+          <label for="tf-comprobada">Comprobada</label>
+          <select id="tf-comprobada-si" class="tfilter-si tfilter-hidden"><option value="si">Sí</option><option value="no">No</option></select>
+          <input type="date" id="tf-comprobada-desde" class="tfilter-date tfilter-hidden">
+          <span class="tfilter-a tfilter-hidden" id="tf-comprobada-a">a</span>
+          <input type="date" id="tf-comprobada-hasta" class="tfilter-date tfilter-hidden">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-contiempos" class="tf-toggle" data-controls="tf-contiempos-si tf-contiempos-desde tf-contiempos-a tf-contiempos-hasta">
+          <label for="tf-contiempos">Con tiempos</label>
+          <select id="tf-contiempos-si" class="tfilter-si tfilter-hidden"><option value="si">Sí</option><option value="no">No</option></select>
+          <input type="date" id="tf-contiempos-desde" class="tfilter-date tfilter-hidden">
+          <span class="tfilter-a tfilter-hidden" id="tf-contiempos-a">a</span>
+          <input type="date" id="tf-contiempos-hasta" class="tfilter-date tfilter-hidden">
+        </div>
+      </div>
+
+      <!-- COL 3: Tipo, Estado, Descripción, Comentario, Observaciones -->
+      <div class="tfilter-col">
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-tipo" class="tf-toggle" data-controls="tf-tipo-sel">
+          <label for="tf-tipo">Tipo</label>
+          <select id="tf-tipo-sel" class="tfilter-sel tfilter-hidden">
+            <option value="">— Todos —</option>
+            <option>Diaria</option><option>Semanal</option><option>Mensual</option><option>Puntual</option>
+          </select>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-estado" class="tf-toggle" data-controls="tf-estado-sel">
+          <label for="tf-estado">Estado</label>
+          <select id="tf-estado-sel" class="tfilter-sel tfilter-hidden">
+            <option value="">— Todos —</option>
+            <option value="asignada">Asignada</option><option value="iniciada">Iniciada</option>
+            <option value="realizada">Realizada</option><option value="comprobada">Comprobada</option>
+            <option value="espera">En espera</option>
+          </select>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-desc" class="tf-toggle" data-controls="tf-desc-txt">
+          <label for="tf-desc">Descripcion</label>
+          <input type="text" id="tf-desc-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-comentario" class="tf-toggle" data-controls="tf-comentario-txt">
+          <label for="tf-comentario">Comentario</label>
+          <input type="text" id="tf-comentario-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-obs" class="tf-toggle" data-controls="tf-obs-txt">
+          <label for="tf-obs">Observaciones</label>
+          <input type="text" id="tf-obs-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+      </div>
+
+      <!-- COL 4: Desc.presup, Dep.asig, Dep.crea + Cobrar/Líneas -->
+      <div class="tfilter-col">
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-desc-pres" class="tf-toggle" data-controls="tf-desc-pres-txt">
+          <label for="tf-desc-pres">Desc. presup.</label>
+          <input type="text" id="tf-desc-pres-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-dep-asig" class="tf-toggle" data-controls="tf-dep-asig-txt">
+          <label for="tf-dep-asig">Dep. asig.</label>
+          <input type="text" id="tf-dep-asig-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-dep-crea" class="tf-toggle" data-controls="tf-dep-crea-txt">
+          <label for="tf-dep-crea">Dep. crea.</label>
+          <input type="text" id="tf-dep-crea-txt" class="tfilter-txt tfilter-hidden" placeholder="">
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-cobrar">
+          <label for="tf-cobrar">Cobrar</label>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-linea-pres">
+          <label for="tf-linea-pres">Línea pres.</label>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-linea-alb">
+          <label for="tf-linea-alb">Línea alb.</label>
+        </div>
+        <div class="tfilter-cell">
+          <input type="checkbox" id="tf-linea-fac">
+          <label for="tf-linea-fac">Línea fac.</label>
+        </div>
+      </div>
+
+    </div><!-- /tfilter-grid -->
+
+    <div class="tareas-filter-actions">
+      <button class="link-btn" onclick="toggleTareasFiltros(false)">Ocultar busqueda</button>
+      <button class="filter-search-btn" id="btn-tareas-buscar" onclick="buscarTareasConFiltros()">🔍 Buscar</button>
+    </div>
+  </div>
+
+    <!-- Main content -->
+  <div class="tareas-main">
+    <div class="table-card">
+      <div class="table-header">
+        <span class="table-title">Tareas activas</span>
+        <div class="estado-tabs">
+          <button class="estado-tab all active" onclick="filterEstado(this)">Todos</button>
+          <button class="estado-tab asig" onclick="filterEstado(this)"><span class="dot" style="background:var(--warning)"></span>Asignada</button>
+          <button class="estado-tab inic" onclick="filterEstado(this)"><span class="dot" style="background:#0ea5e9"></span>Iniciada</button>
+          <button class="estado-tab real" onclick="filterEstado(this)"><span class="dot" style="background:var(--success)"></span>Realizada</button>
+          <button class="estado-tab comp" onclick="filterEstado(this)"><span class="dot" style="background:#15803d"></span>Comprobada</button>
+          <button class="estado-tab espe" onclick="filterEstado(this)"><span class="dot" style="background:var(--purple)"></span>En espera</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nº tarea ↑</th><th>Estado</th><th>Prioridad</th><th>F. creación</th>
+              <th>F. entrega</th><th>Iniciada</th><th>Finalizada</th><th>Comprobada</th><th>H. est.</th><th>H. re.</th><th>Tipo</th>
+              <th>Cliente</th><th>Presupuesto</th><th>Alb.</th><th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody id="tasks-tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-panel">
+      <div class="detail-section">
+        <div class="detail-label">Descripción</div>
+        <div class="detail-content" id="detail-desc">Documentar y diseñar el programa de tareas nuevo de Gestión Formación, tomando como referencia el que tenemos de Onix</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Comentario</div>
+        <textarea class="detail-textarea" id="detail-comentario" placeholder="Añadir comentario..."></textarea>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Observaciones</div>
+        <textarea class="detail-textarea" id="detail-observaciones" placeholder="Añadir observaciones..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <div class="status-filter" id="tareas-status-filter"><span class="status-filter-icon">🔍</span>Filtrando: —</div>
+    <span id="tareas-status-right">Registros: 0 · Tiempo: 0 s</span>
+  </div>
+
+</div><!-- /page-tareas -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: CLIENTES
+════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-clientes">
+
+ 
+  <div class="clientes-main">
+
+    <!-- Filter bar -->
+    <div class="clientes-filter-bar">
+      <div class="clientes-filter-grid">
+        <!-- Col 1 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="clientes-filter-row">
+            <label>Nombre</label>
+            <input type="text" id="f-nombre-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Email</label>
+            <input type="text" id="f-email-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Tipo doc.</label>
+            <input type="text" id="f-tipodoc-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Teléfono</label>
+            <input type="text" id="f-telefono-txt" placeholder="">
+          </div>
+        </div>
+        <!-- Col 2 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="clientes-filter-row">
+            <label>País</label>
+            <input type="text" id="f-pais-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Nº Doc.</label>
+            <input type="text" id="f-ndoc-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Número</label>
+            <input type="text" id="f-numero-txt" placeholder="">
+          </div>
+          <div class="clientes-filter-row">
+            <label>Provincia</label>
+            <input type="text" id="f-provincia-txt" placeholder="">
+          </div>
+        </div>
+      </div>
+      <div class="clientes-filter-actions">
+        <button class="filter-search-btn" id="btn-clientes-buscar" onclick="buscarClientesConFiltros()">🔍 Buscar</button>
+        <button class="filter-search-btn" id="btn-clientes-asignar" onclick="asignarClienteSeleccionado()">Asignar</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+      <div class="table-scroll clientes-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Numero</th><th>N. Comercial</th><th>R. Social</th>
+              <th>Tipo doc.</th><th>Nº Doc.</th><th>País</th>
+              <th>Provincia</th><th>Población</th><th>Dirección</th>
+              <th>Teléfono</th>
+            </tr>
+          </thead>
+          <tbody id="clientes-tbody">
+            <tr>
+              <td colspan="10" style="text-align:center;padding:40px;color:var(--text3);font-size:13px">
+                Sin resultados. Use los filtros para buscar clientes.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="statusbar">
+    <div class="status-filter"><span class="status-filter-icon">🔍</span>Filtrando: Sociedad</div>
+    <span>Registros: 0 · Tiempo: 0 s</span>
+  </div>
+
+</div><!-- /page-clientes -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: PRESUPUESTOS
+════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-presupuestos">
+
+  <div class="menubar">
+    <div class="menu-item" id="menu-pre-general">
+      <button class="menu-btn" onclick="toggleMenu('pre-general')">General</button>
+      <div class="dropdown" id="dd-pre-general">
+        <button class="dropdown-item"><span class="item-icon icon-blue">✨</span> Nuevo</button>
+        <button class="dropdown-item"><span class="item-icon icon-gray">👁</span> Ver</button>
+        <button class="dropdown-item"><span class="item-icon icon-orange">✏️</span> Modificar</button>
+        <button class="dropdown-item danger"><span class="item-icon icon-red">🗑</span> Eliminar</button>
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item danger"><span class="item-icon icon-red">🚪</span> Salir</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-pre-archivos">
+      <button class="menu-btn" onclick="toggleMenu('pre-archivos')">Archivos</button>
+      <div class="dropdown" id="dd-pre-archivos">
+        <button class="dropdown-item"><span class="item-icon icon-gray">📂</span> Ver archivos en menú</button>
+        <button class="dropdown-item"><span class="item-icon icon-blue">➕</span> Nuevo archivo</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-pre-avisos">
+      <button class="menu-btn" onclick="toggleMenu('pre-avisos')">Avisos</button>
+      <div class="dropdown" id="dd-pre-avisos">
+        <button class="dropdown-item"><span class="item-icon icon-orange">🔔</span> Avisos</button>
+        <button class="dropdown-item"><span class="item-icon icon-blue">📧</span> Enviar email</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-pre-criterios">
+      <button class="menu-btn" onclick="toggleMenu('pre-criterios')">Criterios</button>
+      <div class="dropdown" id="dd-pre-criterios">
+        <button class="dropdown-item"><span class="item-icon icon-gray">📐</span> Guardar criterios</button>
+        <button class="dropdown-item"><span class="item-icon icon-gray">📂</span> Cargar criterios</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-pre-informes">
+      <button class="menu-btn" onclick="toggleMenu('pre-informes')">Informes</button>
+      <div class="dropdown" id="dd-pre-informes">
+        <button class="dropdown-item"><span class="item-icon icon-purple">📊</span> Listado presupuestos</button>
+        <button class="dropdown-item"><span class="item-icon icon-purple">📈</span> Resumen por cliente</button>
+      </div>
+    </div>
+    <div class="menu-item" id="menu-pre-datos">
+      <button class="menu-btn" onclick="toggleMenu('pre-datos')">Datos</button>
+      <div class="dropdown" id="dd-pre-datos">
+        <button class="dropdown-item"><span class="item-icon icon-green">🔢</span> Calculadora</button>
+        <button class="dropdown-item"><span class="item-icon icon-orange">🔍</span> Mostrar/Ocultar Filtros</button>
+        <button class="dropdown-item"><span class="item-icon icon-blue">🔎</span> Buscar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="presupuestos-main">
+
+    <!-- Filter bar -->
+    <div class="presupuestos-filter-bar">
+      <div class="presupuestos-filter-grid">
+        <!-- Col 1 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="pres-filter-row">
+            <label>Sociedad</label>
+            <select style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:5px 8px;font-family:inherit;font-size:12.5px;outline:none">
+              <option></option><option>FEMXA FORMACIÓN S.L.U.</option>
+            </select>
+          </div>
+          <div class="pres-filter-row">
+            <label>Cliente</label>
+            <div style="display:flex;gap:4px;flex:1">
+              <input type="text" value="aqa aa aaa" style="flex:1;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:5px 8px;font-family:inherit;font-size:12.5px;outline:none">
+              <button class="input-btn" style="align-self:auto">🔍</button>
+            </div>
+          </div>
+          <div class="pres-filter-row">
+            <label>Número</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Fecha</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Descripción</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Descr. línea</label>
+            <input type="text">
+          </div>
+        </div>
+        <!-- Col 2 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="pres-filter-row">
+            <label>Año</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Mes/Trimestre</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Vers.</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row">
+            <label>Tipo</label>
+            <input type="text">
+          </div>
+          <div class="pres-filter-row" style="align-items:flex-start;gap:10px">
+            <label>Base imp.</label>
+          </div>
+        </div>
+        <!-- Col 3 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="pres-filter-row">
+            <label>Con f. entrega</label>
+          </div>
+          <div class="pres-filter-row">
+            <label>Albaraneado</label>
+            <select style="border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:5px 8px;font-family:inherit;font-size:12.5px;outline:none">
+              <option value="" selected>Sin seleccionar</option>
+              <option>No</option><option>Sí</option><option>Parcial</option>
+            </select>
+          </div>
+          <div class="pres-filter-row">
+            <label>Facturado</label>
+          </div>
+          <div class="pres-filter-row" style="align-items:flex-start">
+            <label style="margin-top:2px">Estado</label>
+            <select multiple class="estado-listbox" id="pf-estado-sel">
+              <option value="__ALL__" selected>Sin seleccionar</option>
+              <option>Preparación</option>
+              <option>Enviado</option>
+              <option>Aceptado</option>
+            </select>
+            <div style="display:flex;align-items:center;gap:5px;margin-left:10px">
+              <label style="font-size:12.5px;color:var(--text2)">Est. produc.</label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pres-filter-actions">
+        <a class="busqueda-avanzada" href="#">Búsqueda avanzada</a>
+        <button class="filter-search-btn">🔍 Buscar</button>
+      </div>
+    </div>
+
+    <!-- Split: presupuestos + líneas -->
+    <div class="pres-split">
+      <div class="table-card pres-main-table" style="border-radius:0;border-left:none;border-right:none">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th></th><th>Número</th><th>Versión</th><th>Fecha</th><th>Cliente</th>
+                <th>Descripción</th><th>F. entrega</th><th>Importe €</th><th>Estado</th>
+                <th>Fecha estado</th><th>Est. producción</th><th>F. est. producción</th>
+                <th>Nº lin. sin tareas</th><th>Nº tar. no realiz.</th><th>Nº tar. realizadas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="15" style="text-align:center;padding:40px;color:var(--text3);font-size:13px">
+                  Sin resultados. Use los filtros para buscar presupuestos.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-card pres-lines-table" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+        <div class="table-header" style="padding:8px 16px">
+          <span class="table-title">Líneas de presupuesto</span>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Nº orden</th><th>Cód. art.</th><th>Descripción</th><th>Cantidad</th>
+                <th>Un. medida</th><th>Precio €</th><th>Desc. %</th><th>Importe €</th>
+                <th>Req. tarea</th><th>Req. pedido</th><th>Carpeta de trabajo</th>
+                <th>Proveedor</th><th>Albaranes</th><th>Nº tareas</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="14" style="text-align:center;padding:20px;color:var(--text3);font-size:12.5px">
+                  Seleccione un presupuesto para ver sus líneas.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="statusbar">
+    <div class="status-filter"><span class="status-filter-icon">🔍</span>Filtrando: Cliente igual a aqa aa aaa, Albaraneado igual a 'No', Estado igual a 'Aceptado'</div>
+    <span>Registros: 0 · Tiempo: 0 s</span>
+  </div>
+
+</div><!-- /page-presupuestos -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE: CONTACTOS
+════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-contactos">
+
+  <div class="contactos-main">
+
+    <!-- Filter bar -->
+    <div class="contactos-filter-bar">
+      <div class="contactos-filter-section-label">Filtros generales</div>
+      <div class="contactos-filter-grid">
+        <!-- Col 1 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="cont-filter-row">
+            <label>Cliente</label>
+            <div style="display:flex;gap:4px;flex:1">
+              <input type="text" id="cf-cliente-txt" style="flex:1" placeholder="Cliente..." readonly>
+            </div>
+          </div>
+          <div class="cont-filter-row">
+            <label>Fec. contacto</label>
+            <input type="date" id="cf-fec-desde">
+            <span style="font-size:12px;color:var(--text3);padding:0 4px">a</span>
+            <input type="date" id="cf-fec-hasta">
+          </div>
+          <div class="cont-filter-row">
+            <label>Clasificado como</label>
+            <input type="text" id="cf-clasificado-txt" style="flex:1">
+          </div>
+        </div>
+        <!-- Col 2 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="cont-filter-row">
+            <label>Tipo contacto</label>
+            <input type="text" id="cf-tipo-txt" style="flex:1">
+          </div>
+          <div class="cont-filter-row">
+            <label>Estado contacto</label>
+            <input type="text" id="cf-estado-txt" style="flex:1">
+          </div>
+        </div>
+        <!-- Col 3 -->
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="cont-filter-row">
+            <input type="checkbox" id="cf-rellam">
+            <label for="cf-rellam">Rellamada</label>
+          </div>
+          <div class="cont-filter-row">
+            <label style="color:var(--text3)">Personal</label>
+            <input type="text" id="cf-personal-txt" style="flex:1;background:var(--surface2);color:var(--text2)" readonly>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <button class="filter-search-btn" id="btn-contactos-buscar">🔍 Buscar</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="contactos-split">
+      <div class="table-card contactos-table-wrap" style="border-radius:0;border-left:none;border-right:none;flex:1">
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Personal</th><th>Fecha</th><th>Hora</th><th>Num.</th>
+                <th>Propietario</th><th>Dirección</th><th>Provincia</th>
+                <th>Población</th><th>Nº teléfono</th><th>Persona de contacto</th>
+                <th>Tipo</th><th>Planificado/Realizado</th><th>Rell.</th>
+                <th>Observaciones</th><th>Clasificado como</th>
+              </tr>
+            </thead>
+            <tbody id="contactos-tbody">
+              <tr>
+                <td colspan="15" style="text-align:center;padding:40px;color:var(--text3);font-size:13px">
+                  Sin resultados. Use los filtros para buscar contactos.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="contactos-obs-bar">
+        <div class="contactos-obs-label">Observaciones</div>
+      </div>
+
+      <!-- Bottom panel -->
+      <div class="contactos-bottom">
+        <div class="agrupados-panel">
+          <div class="agrupados-title">Agrupados</div>
+          <div class="agrupado-row">
+            <span class="agrupado-color" style="background:#e2e6eb"></span>
+            <span>Detalle</span>
+          </div>
+          <div class="agrupado-row">
+            <span class="agrupado-color" style="background:#fef3c7"></span>
+            <span>Fecha</span>
+          </div>
+          <div class="agrupado-row">
+            <span class="agrupado-color" style="background:#fed7aa"></span>
+            <span>Persona</span>
+          </div>
+        </div>
+        <div class="registros-panel">
+          <div class="registros-title">Número registros</div>
+          <div class="registro-row">
+            <span class="registro-label">Realizados</span>
+            <span class="registro-val" id="contactos-reg-realizados">0</span>
+          </div>
+          <div class="registro-row">
+            <span class="registro-label">Planificados</span>
+            <span class="registro-val" id="contactos-reg-planificados">0</span>
+          </div>
+          <div class="registro-row" style="border-top:1px solid var(--border);padding-top:5px;margin-top:2px">
+            <span class="registro-label" style="font-weight:600">Total</span>
+            <span class="registro-val" id="contactos-reg-total" style="font-weight:700">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /page-contactos -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     MODAL — TAREA (Nuevo / Modificar / Ver)
+════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-backdrop" onclick="handleBackdropClick(event)">
+  <div class="modal" id="modal">
+
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-title-icon" id="modal-icon">✨</span>
+        <span id="modal-title-text">Nueva tarea</span>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- DATOS -->
+      <div class="modal-section">
+        <div class="modal-section-title">Datos de la tarea</div>
+        <div class="form-grid fg5" style="margin-bottom:12px">
+          <div class="form-group"><label class="form-label">Fecha de creación</label><input type="date" class="form-control" id="f-creacion" value="2026-03-03"></div>
+          <div class="form-group"><label class="form-label">F. entrega</label><input type="date" class="form-control" id="f-entrega"></div>
+          <div class="form-group"><label class="form-label">F. inicio</label><input type="date" class="form-control" id="f-inicio"></div>
+          <div class="form-group"><label class="form-label">F. fin</label><input type="date" class="form-control" id="f-fin"></div>
+          <div class="form-group"><label class="form-label">F. comprobación</label><input type="date" class="form-control" id="f-comprobacion"></div>
+        </div>
+        <div class="form-grid fg2" style="margin-bottom:12px">
+          <div class="form-group">
+            <label class="form-label">Responsable 1 <span style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0">(quien manda la tarea)</span></label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <select class="form-control" id="resp1">
+                <option value="">— Seleccionar responsable —</option>
+                
+              </select>
+              <label class="activo-check-label" for="activo-resp1"><input type="checkbox" id="activo-resp1" checked><span>Activo</span></label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Responsable 2 <span style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0">(a quien va la tarea)</span></label>
+            <div style="display:flex;align-items:center;gap:10px">
+              <select class="form-control" id="resp2">
+                <option value="">— Seleccionar responsable —</option>
+
+              </select>
+              <label class="activo-check-label" for="activo-resp2"><input type="checkbox" id="activo-resp2" checked><span>Activo</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="form-grid fg3">
+          <div class="form-group">
+            <label class="form-label">Tipo de tarea</label>
+            <select class="form-control" id="tipo-tarea">
+              <option>Diaria</option><option>Semanal</option><option>Mensual</option><option>Puntual</option>
+            </select>
+          </div>
+          <div class="form-group"><label class="form-label">F. en espera</label><input type="date" class="form-control" id="f-espera"></div>
+          <div class="form-group">
+            <label class="form-label">Carpeta de trabajo</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="carpeta" placeholder="Ruta...">
+              <button class="input-btn" id="btn-carpeta1">🔍</button>
+              <button class="input-btn" id="btn-carpeta2">📂</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTENIDO -->
+      <div class="modal-section">
+        <div class="modal-section-title">Contenido</div>
+        <div class="form-grid" style="gap:10px">
+          <div class="form-group"><label class="form-label">Descripción</label><textarea class="form-control" id="descripcion" rows="4" placeholder="Descripción de la tarea..."></textarea></div>
+          <div class="form-group"><label class="form-label">Comentario</label><textarea class="form-control" id="comentario" rows="2" placeholder="Comentario..."></textarea></div>
+          <div class="form-group"><label class="form-label">Observaciones</label><textarea class="form-control" id="observaciones" rows="2" placeholder="Observaciones..."></textarea></div>
+        </div>
+      </div>
+
+      <!-- CLIENTE Y PRESUPUESTO -->
+      <div class="modal-section">
+        <div class="modal-section-title">Cliente y presupuesto</div>
+        <div class="form-grid fg2" style="margin-bottom:10px">
+          <div class="form-group">
+            <label class="form-label">Cliente</label>
+            <div class="input-group" style="position:relative">
+              <input type="text" class="form-control" id="cliente" placeholder="Cliente..." autocomplete="off">
+              <button class="input-btn" id="btn-cliente">🔍</button>
+              <ul id="cliente-dropdown" class="autocomplete-dropdown"></ul>
+            </div>
+          </div>
+          <div class="form-group" style="justify-content:flex-end">
+            <div class="radio-group">
+              <label class="radio-row"><input type="radio" name="cobro" id="cobrar"> Cobrar al cliente</label>
+              <label class="radio-row"><input type="radio" name="cobro" id="selec-pres" checked> Seleccionar presupuesto</label>
+            </div>
+          </div>
+        </div>
+        <div class="form-grid" style="gap:8px;margin-bottom:10px">
+          <div class="form-group">
+            <label class="form-label">Presupuesto</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="presupuesto" placeholder="Presupuesto...">
+              <button class="input-btn" id="btn-presupuesto" title="Buscar presupuesto">🔍</button>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Línea de presupuesto</label><input type="text" class="form-control" id="linea-pres" placeholder="Línea..."></div>
+          <div class="form-group">
+            <label class="form-label">Contacto</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="contacto" placeholder="Contacto...">
+              <button class="input-btn" id="btn-contacto">🔍</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-grid fg3">
+          <div class="form-group"><label class="form-label">Horas estimadas</label><input type="number" class="form-control" id="h-estimadas" value="0.00" min="0" step="0.25" style="font-family:'DM Mono',monospace"></div>
+          <div class="form-group"><label class="form-label">Horas reales</label><input type="number" class="form-control" id="h-reales" value="0.00" min="0" step="0.25" style="font-family:'DM Mono',monospace"></div>
+          <div class="form-group"><label class="form-label">Departamento</label><input type="text" class="form-control" id="departamento" placeholder="Departamento..."></div>
+        </div>
+      </div>
+
+      <!-- ASIGNAR TIEMPOS -->
+      <div class="modal-section" id="seccion-tiempos">
+        <div class="modal-section-title">Asignar tiempos</div>
+        <div class="tiempos-row">
+          <div class="form-group"><label class="form-label">Comentario</label><textarea class="form-control" id="tiempo-comentario" rows="2" placeholder="Descripción del trabajo realizado..."></textarea></div>
+          <div class="form-group"><label class="form-label">Fecha</label><input type="date" class="form-control" id="tiempo-fecha" value="2026-03-03"></div>
+          <div class="form-group"><label class="form-label">Horas</label><input type="number" class="form-control" id="tiempo-horas" value="0.00" min="0" step="0.25" style="font-family:'DM Mono',monospace"></div>
+        </div>
+        <div class="tiempos-actions">
+          <button class="btn btn-primary" id="btn-asignar-tiempo" onclick="asignarTiempo()">Registrar tiempo</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Salir</button>
+      <button class="btn btn-primary" id="btn-guardar" onclick="saveModal()">💾 Guardar</button>
+    </div>
+  </div>
+</div><!-- /modal-backdrop -->
+
+<!-- ── Hidden folder picker ── -->
+<input type="file" id="carpeta-picker" webkitdirectory style="display:none">
+
+
+<style>
+/* Toast */
+.toast {
+  position:fixed; bottom:-60px; left:50%; transform:translateX(-50%);
+  background:var(--text); color:#fff; padding:10px 22px;
+  border-radius:var(--radius); font-size:13px; font-weight:500;
+  box-shadow:var(--shadow-lg); z-index:9999;
+  transition:bottom .28s ease; white-space:nowrap; pointer-events:none;
+}
+.toast.show { bottom:22px; }
+.toast.toast-warning { background:var(--warning); }
+.toast.toast-success { background:var(--success); }
+.toast.toast-info    { background:var(--accent); }
+mark { background:var(--warning-light); border-radius:2px; padding:0 1px; }
+
+/* Autocomplete dropdown */
+.autocomplete-dropdown {
+  display:none; position:absolute; top:100%; left:0;
+  width:100%; background:var(--surface);
+  border:1.5px solid var(--accent); border-top:none;
+  border-radius:0 0 var(--radius-sm) var(--radius-sm);
+  box-shadow:var(--shadow-md); z-index:2000;
+  list-style:none; margin:0; padding:4px 0;
+  max-height:220px; overflow-y:auto;
+}
+.autocomplete-dropdown.open { display:block; }
+.autocomplete-dropdown li {
+  padding:7px 12px; font-size:12.5px; color:var(--text);
+  cursor:pointer; transition:background .1s;
+}
+.autocomplete-dropdown li:hover,
+.autocomplete-dropdown li.ac-active {
+  background:var(--accent-light); color:var(--accent);
+}
+
+/* Panel de filtros — 4 columnas iguales sin bordes */
+.tfilter-grid {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+.tfilter-col {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.tfilter-cell {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  min-height: 23px;
+  white-space: nowrap;
+}
+.tfilter-cell input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.tfilter-cell label {
+  flex-shrink: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+  min-width: 70px;
+}
+.tfilter-date {
+  font-size: 11px;
+  padding: 1px 3px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 3px;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  height: 20px;
+  width: 106px;
+  flex-shrink: 0;
+}
+.tfilter-si {
+  font-size: 11px;
+  padding: 0 2px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 3px;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  height: 20px;
+  width: 40px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.tfilter-sel {
+  font-size: 12px;
+  padding: 1px 4px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 3px;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  height: 20px;
+  flex: 1;
+  min-width: 80px;
+  max-width: 200px;
+}
+.tfilter-txt {
+  font-size: 12px;
+  padding: 1px 5px;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 3px;
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  height: 20px;
+  flex: 1;
+  min-width: 60px;
+}
+.tfilter-a {
+  font-size: 12px;
+  color: var(--text3, #6b7280);
+  flex-shrink: 0;
+}
+.tfilter-hidden {
+  display: none !important;
+}
+</style>
+
+<div id="toast" class="toast"></div>
+<script src="js/responsables.js"></script>
+<script src="js/app.js"></script>
+<script>
+// Mostrar/ocultar controles según el estado del checkbox
+document.addEventListener('DOMContentLoaded', () => {
+  function applyToggle(cb) {
+    const ids = (cb.dataset.controls || '').split(' ').filter(Boolean);
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle('tfilter-hidden', !cb.checked);
+    });
+  }
+
+  document.querySelectorAll('.tf-toggle').forEach(cb => {
+    // Estado inicial
+    applyToggle(cb);
+    // Cambios futuros
+    cb.addEventListener('change', () => applyToggle(cb));
+  });
+});
+</script>
+
+</div><!-- /app-content -->
+</div><!-- /app-layout -->
+
+
+<style>
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+  position: relative;
+}
+.app-content .page {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.app-content .page.active {
+  display: flex;
+}
+
+body.standalone-tarea #menu-overlay,
+body.standalone-tarea .menubar,
+body.standalone-tarea .toolbar,
+body.standalone-tarea .statusbar,
+body.standalone-tarea .page {
+  display: none !important;
+}
+
+body.standalone-tarea .app-content {
+  overflow: hidden;
+}
+
+body.standalone-tarea .modal-backdrop {
+  background: transparent;
+  backdrop-filter: none;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+body.standalone-tarea .modal-backdrop.open {
+  animation: none;
+}
+
+body.standalone-tarea .modal {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+
+body.standalone-tarea .modal-title-icon,
+body.standalone-tarea .modal-close {
+  border-radius: 0;
+}
+</style>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presupuestos</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/modulos.css">
+</head>
+<body>
+
+<div class="presupuestos-main">
+
+  <!-- Filter bar -->
+  <div class="presupuestos-filter-bar">
+    <div class="presupuestos-filter-grid">
+      <!-- Col 1 -->
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="pres-filter-row">
+          <label>Sociedad</label>
+          <select id="pf-sociedad-sel">
+            <option></option><option>FEMXA FORMACIÓN S.L.U.</option>
+          </select>
+        </div>
+        <div class="pres-filter-row">
+          <label>Cliente</label>
+          <div style="display:flex;gap:4px;flex:1">
+            <input type="text" id="pf-cliente-txt" value="">
+          </div>
+        </div>
+        <div class="pres-filter-row">
+          <label>Número</label>
+          <input type="text" id="pf-numero-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Fecha</label>
+          <input type="text" id="pf-fecha-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Descripción</label>
+          <input type="text" id="pf-desc-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Descr. línea</label>
+          <input type="text" id="pf-desclinea-txt">
+        </div>
+      </div>
+      <!-- Col 2 -->
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="pres-filter-row">
+          <label>Año</label>
+          <input type="text" id="pf-anio-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Mes/Trimestre</label>
+          <input type="text" id="pf-mes-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Vers.</label>
+          <input type="text" id="pf-vers-txt">
+        </div>
+        <div class="pres-filter-row">
+          <label>Tipo</label>
+          <input type="text" id="pf-tipo-txt">
+        </div>
+      </div>
+      <!-- Col 3 -->
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div class="pres-filter-row">
+          <label>Con f. entrega</label>
+          <select id="pf-conF-sel">
+            <option value="" selected>Sin seleccionar</option>
+            <option>No</option><option>Sí</option>
+          </select>
+        </div>
+        <div class="pres-filter-row">
+          <label>Albaraneado</label>
+          <select id="pf-alb-sel">
+            <option value="" selected>Sin seleccionar</option>
+            <option>No</option><option>Sí</option><option>Parcial</option>
+          </select>
+        </div>
+        <div class="pres-filter-row">
+          <label>Facturado</label>
+          <select id="pf-fact-sel">
+            <option value="" selected>Sin seleccionar</option>
+            <option>No</option><option>Sí</option>
+          </select>
+        </div>
+        <div class="pres-filter-row" style="align-items:flex-start">
+          <label style="margin-top:2px">Estado</label>
+          <select multiple class="estado-listbox" id="pf-estado-sel">
+            <option value="__ALL__" selected>Sin seleccionar</option>
+            <option>Preparación</option>
+            <option>Enviado</option>
+            <option>Aceptado</option>
+          </select>
+          <div style="display:flex;align-items:center;gap:5px;margin-left:10px">
+            <label style="font-size:12.5px;color:var(--text2)">Est. produc.</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pres-filter-actions">
+      <div style="display:flex;gap:8px">
+        <button class="filter-search-btn" id="btn-presupuestos-buscar">🔍 Buscar</button>
+        <button class="filter-search-btn" id="btn-presupuestos-asignar">Asignar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Split: presupuestos + líneas -->
+  <div class="pres-split">
+    <div class="table-card pres-main-table" style="border-radius:0;border-left:none;border-right:none">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th></th><th>Número</th><th>Versión</th><th>Fecha</th><th>Cliente</th>
+              <th>Descripción</th><th>F. entrega</th><th>Importe €</th><th>Estado</th>
+              <th>Fecha estado</th><th>Est. producción</th><th>F. est. producción</th>
+              <th>Nº lin. sin tareas</th><th>Nº tar. no realiz.</th><th>Nº tar. realizadas</th>
+            </tr>
+          </thead>
+          <tbody id="presupuestos-tbody">
+            <tr>
+              <td colspan="15" style="text-align:center;padding:40px;color:var(--text3);font-size:13px">
+                Sin resultados. Use los filtros para buscar presupuestos.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="table-card pres-lines-table" style="border-radius:0;border-left:none;border-right:none;border-bottom:none">
+      <div class="table-header" style="padding:8px 16px">
+        <span class="table-title">Líneas de presupuesto</span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Nº orden</th><th>Cód. art.</th><th>Descripción</th><th>Cantidad</th>
+              <th>Un. medida</th><th>Precio €</th><th>Desc. %</th><th>Importe €</th>
+              <th>Req. tarea</th><th>Req. pedido</th><th>Carpeta de trabajo</th>
+              <th>Proveedor</th><th>Albaranes</th><th>Nº tareas</th>
+            </tr>
+          </thead>
+          <tbody id="presupuestos-lineas-tbody">
+            <tr>
+              <td colspan="14" style="text-align:center;padding:20px;color:var(--text3);font-size:12.5px">
+                Seleccione un presupuesto para ver sus líneas.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="statusbar" id="presupuestos-status">
+  <div class="status-filter" id="presupuestos-status-filter"><span class="status-filter-icon">🔍</span>Filtrando: Sin filtros</div>
+  <span id="presupuestos-status-right">Registros: 0 · Tiempo: 0 s</span>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/presupuestos.js"></script>
+</body>
+</html>

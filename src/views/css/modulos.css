@@ -1,0 +1,106 @@
+/* ═══════════════════════════════════════
+   PRESUPUESTOS.CSS
+   ═══════════════════════════════════════ */
+
+.presupuestos-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+.presupuestos-filter-bar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 20px; flex-shrink:0;
+}
+.presupuestos-filter-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px 24px;
+}
+.pres-filter-row {
+  display:flex; align-items:center; gap:8px;
+}
+.pres-filter-row input[type=checkbox] { width:14px; height:14px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+.pres-filter-row label { font-size:12.5px; color:var(--text2); font-weight:500; cursor:pointer; white-space:nowrap; min-width:70px; }
+.pres-filter-row input[type=text],
+.pres-filter-row select {
+  flex:1; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  padding:5px 8px; font-family:inherit; font-size:12.5px;
+  color:var(--text); background:var(--surface); outline:none; transition:border-color .15s;
+}
+.pres-filter-row input[type=text]:focus,
+.pres-filter-row select:focus { border-color:var(--accent); }
+
+/* Estado multi-select listbox */
+.estado-listbox {
+  border:1.5px solid var(--accent); border-radius:var(--radius-sm);
+  font-family:inherit; font-size:12.5px; padding:2px;
+  height:70px; min-width:110px; background:var(--surface);
+}
+.estado-listbox option { padding:3px 6px; border-radius:4px; }
+.estado-listbox option:checked { background:var(--accent-light); color:var(--accent); }
+
+/* Presupuesto split view */
+.pres-split { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.pres-main-table { flex:0 0 55%; overflow:auto; border-bottom:3px solid var(--border); }
+.pres-lines-table { flex:0 0 45%; overflow:auto; }
+
+.pres-filter-actions {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:10px; padding-top:10px; border-top:1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════
+   CONTACTOS.CSS
+   ═══════════════════════════════════════ */
+
+.contactos-main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+
+.contactos-filter-bar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:14px 20px; flex-shrink:0;
+}
+.contactos-filter-section-label {
+  font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.6px;
+  color:var(--text3); margin-bottom:8px;
+}
+.contactos-filter-grid {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:8px 24px; margin-bottom:8px;
+}
+.cont-filter-row { display:flex; align-items:center; gap:8px; }
+.cont-filter-row input[type=checkbox] { width:14px; height:14px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+.cont-filter-row label { font-size:12.5px; color:var(--text2); font-weight:500; cursor:pointer; white-space:nowrap; min-width:90px; }
+.cont-filter-row input[type=text],
+.cont-filter-row select {
+  flex:1; border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  padding:5px 8px; font-family:inherit; font-size:12.5px;
+  color:var(--text); background:var(--surface); outline:none; transition:border-color .15s;
+}
+.cont-filter-row input[type=date] {
+  border:1.5px solid var(--border); border-radius:var(--radius-sm);
+  padding:5px 8px; font-family:inherit; font-size:12.5px;
+  color:var(--text); background:var(--surface); outline:none;
+}
+.cont-filter-row input[type=text]:focus,
+.cont-filter-row select:focus,
+.cont-filter-row input[type=date]:focus { border-color:var(--accent); }
+
+.contactos-split { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.contactos-table-wrap { flex:1; overflow:auto; }
+.contactos-obs-bar {
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:10px 16px; font-size:12.5px; color:var(--text2); flex-shrink:0;
+}
+.contactos-obs-label { font-weight:600; color:var(--text3); font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; margin-bottom:4px; }
+
+/* Agrupados bottom panel */
+.contactos-bottom {
+  background:var(--surface); border-top:2px solid var(--border);
+  display:grid; grid-template-columns:200px 1fr;
+  flex-shrink:0; min-height:100px;
+}
+.agrupados-panel { border-right:1px solid var(--border); padding:12px 16px; }
+.agrupados-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text3); margin-bottom:8px; }
+.agrupado-row { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:12.5px; color:var(--text2); }
+.agrupado-color { width:14px; height:14px; border-radius:3px; flex-shrink:0; }
+.agrupado-row input[type=checkbox] { width:14px; height:14px; accent-color:var(--accent); cursor:pointer; }
+
+.registros-panel { padding:12px 16px; }
+.registros-title { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:var(--text3); margin-bottom:8px; }
+.registro-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; font-size:12.5px; }
+.registro-label { color:var(--text2); }
+.registro-val { font-family:'DM Mono',monospace; font-weight:600; color:var(--text); background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:2px 10px; min-width:50px; text-align:right; }
