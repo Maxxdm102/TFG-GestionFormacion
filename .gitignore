@@ -1,0 +1,16 @@
+node_modules/
+dist/
+dist-updater/
+build/
+coverage/
+
+# Entorno y Secretos
+.env
+.env.local
+
+# Ficheros temporales y de sistema
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

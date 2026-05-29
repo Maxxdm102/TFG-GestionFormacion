@@ -1,0 +1,98 @@
+:root {
+  --bg: #0f172a;
+  --card: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.14);
+  --text: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.72);
+  --accent: #39b54a;
+  --accent2: #60a5fa;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(900px 420px at 20% 15%, rgba(96, 165, 250, 0.22), transparent 60%),
+    radial-gradient(700px 380px at 85% 80%, rgba(57, 181, 74, 0.20), transparent 60%),
+    linear-gradient(180deg, #0b1023, var(--bg));
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.card {
+  width: 100%;
+  max-width: 520px;
+  border: 1px solid var(--stroke);
+  background: var(--card);
+  border-radius: 18px;
+  box-shadow: 0 20px 70px rgba(0,0,0,0.35);
+  padding: 18px 18px 14px;
+  backdrop-filter: blur(10px);
+}
+
+.head { margin-bottom: 16px; }
+.title {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  font-size: 20px;
+}
+.subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.status { margin: 16px 0 14px; }
+.message {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.35;
+  min-height: 38px;
+}
+.meter {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.12);
+  overflow: hidden;
+  margin: 10px 0 8px;
+}
+.bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  width: 0%;
+  transition: width 160ms ease;
+}
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.65;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+.btn {
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.07);
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+}
+.btn:hover { background: rgba(255,255,255,0.10); }
+.btn:disabled { opacity: 0.55; cursor: default; }
+.btn.primary {
+  border-color: rgba(57, 181, 74, 0.34);
+  background: rgba(57, 181, 74, 0.16);
+}
+.btn.primary:hover { background: rgba(57, 181, 74, 0.20); }
+

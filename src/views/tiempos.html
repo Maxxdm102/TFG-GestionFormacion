@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ver tiempos</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/tiempos.css">
+</head>
+<body class="hide-status-right">
+
+<div class="tiempos-header">
+  <div>
+    <div class="tiempos-title">Ver tiempos</div>
+    <div class="tiempos-sub">Tarea: <span id="tiempos-task-id">—</span></div>
+  </div>
+  <div class="tiempos-actions">
+    <button class="btn btn-secondary" id="btn-refrescar" title="Refrescar">Refrescar</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-field">
+      <label for="asignada">Asignada a</label>
+      <select id="asignada" class="form-control" style="min-width:260px"></select>
+    </div>
+    <div class="filter-field">
+      <label for="fecha-desde">Fecha del tiempo</label>
+      <input id="fecha-desde" type="date" class="form-control">
+      <span style="color:var(--text3);font-size:12px">a</span>
+      <input id="fecha-hasta" type="date" class="form-control">
+    </div>
+    <button class="filter-search-btn" id="btn-buscar"><span class="icon-inline" data-icon="search" aria-hidden="true"></span> Buscar</button>
+  </div>
+</div>
+
+<div class="toolbar tiempos-toolbar">
+  <div class="toolbar-group">
+    <button class="tool-btn" id="btn-tiempo-nuevo" title="Crear registro"><span class="icon-inline" data-icon="plus" aria-hidden="true"></span></button>
+    <button class="tool-btn" id="btn-tiempo-editar" title="Modificar registro"><span class="icon-inline" data-icon="edit" aria-hidden="true"></span></button>
+    <button class="tool-btn" id="btn-tiempo-eliminar" title="Eliminar registro" style="color:var(--danger)"><span class="icon-inline" data-icon="trash" aria-hidden="true"></span></button>
+  </div>
+</div>
+
+<div class="tiempos-main">
+  <div class="table-card">
+    <div class="table-header">
+      <span class="table-title">Registros de tiempos</span>
+      <span class="tiempos-total" id="tiempos-total">0 registros</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Asignada a</th>
+            <th>Fecha</th>
+            <th>H. reales</th>
+            <th>H. estim.</th>
+            <th>No tarea</th>
+            <th>Presupuesto</th>
+            <th>Cliente</th>
+            <th>Descripcion de la tarea</th>
+            <th>Comentario de la tarea</th>
+          </tr>
+        </thead>
+        <tbody id="tiempos-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar" id="tiempos-status">
+  <div class="status-filter"><span class="status-filter-icon" data-icon="search" aria-hidden="true"></span>Filtrando: Asignada a</div>
+  <span class="statusbar-right">Registros: 0 - Tiempo: 0 s</span>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="modal-backdrop" id="tiempo-modal-backdrop">
+  <div class="modal" style="width:520px;max-width:94vw">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-title-icon" id="tiempo-modal-icon" data-icon="timer" aria-hidden="true"></span>
+        <span id="tiempo-modal-title">Registro de tiempo</span>
+      </div>
+      <button class="modal-close" id="tiempo-modal-close">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Datos del registro</div>
+        <div class="form-grid fg2">
+          <div class="form-group">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="tiempo-fecha">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Horas</label>
+            <input type="number" class="form-control" id="tiempo-horas" min="0" step="0.25" inputmode="decimal">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label">Comentario</label>
+          <textarea class="form-control" id="tiempo-comentario" rows="3" placeholder="Descripcion del trabajo realizado..."></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="tiempo-modal-cancelar">Cancelar</button>
+      <button class="btn btn-primary" id="tiempo-modal-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/ui-icons.js"></script>
+<script src="js/tiempos.js"></script>
+</body>
+</html>

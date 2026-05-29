@@ -1,0 +1,8 @@
+{
+  "mandatory": false,
+  "mandatoryFrom": "1.0",
+  "minSupported": "1.0",
+  "messageOptional": "Hay una actualización disponible. ¿Quieres actualizar ahora?",
+  "messageMandatory": "Hay una actualización obligatoria. Debes actualizar para continuar."
+}
+

@@ -1,0 +1,142 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Horarios</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/horarios.css">
+</head>
+<body class="hide-status-right">
+
+<div class="horarios-header">
+  <div>
+    <div class="horarios-title">Horarios</div>
+    <div class="horarios-sub">Trabajador: <span id="horarios-user">-</span></div>
+  </div>
+  <div class="horarios-actions">
+    <button class="btn btn-secondary" id="btn-refrescar" title="Refrescar">Refrescar</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-field">
+      <label for="fecha-desde">Fecha</label>
+      <input id="fecha-desde" type="date" class="form-control">
+      <span style="color:var(--text3);font-size:12px">a</span>
+      <input id="fecha-hasta" type="date" class="form-control">
+    </div>
+    <button class="filter-search-btn" id="btn-buscar">Buscar</button>
+  </div>
+</div>
+
+<div class="toolbar horarios-toolbar">
+  <div class="toolbar-group">
+    <button class="tool-btn" id="btn-horario-editar" title="Modificar registro">&#9998;</button>
+    <button class="tool-btn" id="btn-horario-eliminar" title="Eliminar registro" style="color:var(--danger)">&#128465;</button>
+    <button class="tool-btn" id="btn-horario-logs" title="Ver logs">&#128196;</button>
+  </div>
+</div>
+
+<div class="horarios-main">
+  <div class="table-card">
+    <div class="table-header">
+      <span class="table-title">Registro de horarios</span>
+      <span class="horarios-total" id="horarios-total">0 registros</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Evento</th>
+            <th>Comentario</th>
+            <th>Dispositivo</th>
+          </tr>
+        </thead>
+        <tbody id="horarios-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar" id="horarios-status">
+  <div class="status-filter"><span class="status-filter-icon">F</span>Filtrando: Fecha</div>
+  <span class="statusbar-right">Registros: 0 - Tiempo: 0 s</span>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="modal-backdrop" id="horario-modal-backdrop">
+  <div class="modal" style="width:520px;max-width:94vw">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-title-icon" id="horario-modal-icon">&#9998;</span>
+        <span id="horario-modal-title">Modificar registro</span>
+      </div>
+      <button class="modal-close" id="horario-modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Datos del fichaje</div>
+        <div class="form-grid fg2">
+          <div class="form-group">
+            <label class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="horario-fecha">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Hora</label>
+            <input type="time" class="form-control" id="horario-hora">
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label">Evento</label>
+          <select class="form-control" id="horario-evento"></select>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <label class="form-label">Motivo (obligatorio)</label>
+          <input type="text" class="form-control" id="horario-motivo-edit" placeholder="Escribe el motivo del cambio">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="horario-modal-cancelar">Cancelar</button>
+      <button class="btn btn-primary" id="horario-modal-guardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="horario-delete-backdrop">
+  <div class="modal" style="width:420px;max-width:94vw">
+    <div class="modal-header">
+      <div class="modal-title">
+        <span class="modal-title-icon" id="horario-delete-icon">&#128465;</span>
+        <span>Eliminar registro</span>
+      </div>
+      <button class="modal-close" id="horario-delete-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">Confirmaci&#243;n</div>
+        <div class="form-group">
+          <div style="margin:6px 0 10px;color:var(--text2);font-size:13px">&#191;Eliminar el registro seleccionado?</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Motivo (obligatorio)</label>
+          <input type="text" class="form-control" id="horario-motivo-delete" placeholder="Escribe el motivo de eliminaci&#243;n">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="horario-delete-cancelar">Cancelar</button>
+      <button class="btn btn-primary" id="horario-delete-confirm">Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/horarios.js"></script>
+</body>
+</html>
+

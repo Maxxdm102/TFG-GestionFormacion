@@ -1,0 +1,82 @@
+{
+  "name": "tareasgforma",
+  "version": "2.0.0",
+  "description": "Tareas GForma — Aplicación de escritorio",
+  "author": "GForma",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "jest",
+    "build:updater": "electron-builder --win dir -c electron-builder.updater.json",
+    "build": "npm run build:updater && electron-builder",
+    "dist": "npm run build:updater && electron-builder --win nsis && node scripts/make-ftp-artifact.js",
+    "dist:updater": "electron-builder --win nsis -c electron-builder.updater.json",
+    "dist:patch": "node scripts/make-patch-rar.js",
+    "dist:sfx": "node scripts/make-sfx.js"
+  },
+  "dependencies": {
+    "7zip-bin": "^5.2.0",
+    "basic-ftp": "^5.0.5",
+    "dotenv": "^17.4.2",
+    "mssql": "^10.0.4"
+  },
+  "devDependencies": {
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "jest": "^29.7.0"
+  },
+  "build": {
+    "appId": "com.tareasgforma.app",
+    "productName": "Tareas GForma",
+    "buildVersion": "1.0.0",
+    "artifactName": "Tareas GForma-Setup-${version}.${ext}",
+    "files": [
+      "**/*",
+      "!dist/**",
+      "!dist-updater/**",
+      "!scripts/**",
+      "!build/**",
+      "!RELEASE.md",
+      "!test-db.js"
+    ],
+    "asarUnpack": [
+      "node_modules/7zip-bin/**"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "signAndEditExecutable": true,
+      "publisherName": "GForma",
+      "legalTrademarks": "Copyright © 2026 GForma"
+    },
+    "extraResources": [
+      {
+        "from": "dist/Fondos",
+        "to": "Fondos",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "dist/Config.xml",
+        "to": "Config.xml"
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "dist-updater/win-unpacked",
+        "to": "Actualizador",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": true,
+      "allowElevation": true,
+      "include": "build/nsis-app.nsh"
+    }
+  }
+}

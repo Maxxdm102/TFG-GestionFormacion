@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; script-src 'self'; connect-src https: http:;" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Actualizador</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="card">
+      <header class="head">
+        <div class="title">Actualizador</div>
+        <div class="subtitle">TareasGForma</div>
+      </header>
+
+      <section class="status">
+        <div id="message" class="message">Listo para comprobar actualizaciones.</div>
+        <div class="meter">
+          <div id="bar" class="bar" style="width: 0%"></div>
+        </div>
+        <div id="hint" class="hint">Asegúrate de que la aplicación esté cerrada antes de instalar.</div>
+      </section>
+
+      <footer class="actions">
+        <button id="btnStart" class="btn primary">Comprobar</button>
+        <button id="btnCancel" class="btn" disabled>Cancelar</button>
+      </footer>
+    </main>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

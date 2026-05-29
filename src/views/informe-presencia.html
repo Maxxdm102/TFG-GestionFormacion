@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informe presencia</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/informe-presencia.css">
+</head>
+<body class="hide-status-right">
+
+<div class="informe-header">
+  <div>
+    <div class="informe-title">Informe presencia</div>
+    <div class="informe-sub">Trabajador: <span id="informe-user">-</span></div>
+  </div>
+  <div class="informe-actions">
+    <button class="btn btn-secondary" id="btn-refrescar" title="Refrescar">Refrescar</button>
+  </div>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-row">
+    <div class="filter-field">
+      <label for="fecha-desde">Fecha</label>
+      <input id="fecha-desde" type="date" class="form-control">
+      <span style="color:var(--text3);font-size:12px">a</span>
+      <input id="fecha-hasta" type="date" class="form-control">
+    </div>
+    <button class="filter-search-btn" id="btn-buscar">Buscar</button>
+    <button class="btn btn-secondary" id="btn-pdf" title="Generar PDF">Generar PDF</button>
+    <button class="btn btn-secondary" id="btn-csv" title="Exportar CSV">Exportar CSV</button>
+  </div>
+</div>
+
+<div class="informe-main">
+  <div class="table-card">
+    <div class="table-header">
+      <span class="table-title">Resumen</span>
+      <span class="informe-total" id="informe-total">0 registros</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Entradas</th>
+            <th>Salidas</th>
+            <th>Tiempo</th>
+          </tr>
+        </thead>
+        <tbody id="informe-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar" id="informe-status">
+  <div class="status-filter"><span class="status-filter-icon">F</span>Filtrando: Fecha</div>
+  <span class="statusbar-right">Registros: 0 - Tiempo: 0 s</span>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/informe-presencia.js"></script>
+</body>
+</html>

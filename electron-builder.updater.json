@@ -1,0 +1,35 @@
+{
+  "appId": "com.tareasgforma.updater",
+  "productName": "Tareas GForma Actualizador",
+  "artifactName": "Tareas GForma Actualizador Setup-${version}.${ext}",
+  "directories": {
+    "output": "dist-updater"
+  },
+  "files": [
+    "**/*",
+    "!dist/**",
+    "!dist-updater/**",
+    "!scripts/**",
+    "!build/**",
+    "!RELEASE.md",
+    "!test-db.js"
+  ],
+  "asarUnpack": [
+    "node_modules/7zip-bin/**"
+  ],
+  "win": {
+    "target": "nsis",
+    "icon": "assets/icon.ico",
+    "signAndEditExecutable": true
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "perMachine": true,
+    "allowElevation": true,
+    "include": "build/nsis-updater.nsh"
+  },
+  "extraMetadata": {
+    "main": "updater-main.js"
+  }
+}
