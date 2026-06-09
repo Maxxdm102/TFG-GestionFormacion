@@ -262,7 +262,6 @@ function main() {
     'TareasGForma-InstalledVersion.json',
     'Actualizador\\',    // No sobrescribir el actualizador en caliente
     'instalar.bat',
-    'Config.xml',       // Excluir de xcopy para manejarlo manualmente en el bat
   ].join('\r\n') + '\r\n';
   fs.writeFileSync(path.join(stagingDir, 'exclude.txt'), excludeContent, 'utf8');
 

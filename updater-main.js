@@ -1020,7 +1020,7 @@ async function runUpdateFlowPackages() {
   const extractedRoot = resolveExtractedRoot(extractDir);
 
   applyDeletes(extractedRoot, info.installDir);
-  overlayCopyDir(extractedRoot, info.installDir, { preserveConfigXml: true });
+  overlayCopyDir(extractedRoot, info.installDir);
 
   writeInstalledVersionMarker(info.installDir, latest);
 

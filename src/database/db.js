@@ -225,19 +225,29 @@ async function checkWindowsUser() {
 /* ─── Guardar y leer fondo en Config.xml ────────────────────── */
 function saveFondo(fondoPath) {
   const configPath = getConfigPath();
+  const configDir = path.dirname(configPath);
+  
+  // Convertir a ruta relativa respecto al directorio del XML
+  let finalPath = fondoPath;
+  try {
+    finalPath = path.relative(configDir, fondoPath);
+  } catch (e) {
+    // Si falla (p.ej. discos distintos en Windows), dejar la original
+  }
+
   let xmlContent = '';
 
   if (fs.existsSync(configPath)) {
     xmlContent = fs.readFileSync(configPath, 'utf-8');
     if (xmlContent.includes('<RutaFondo>')) {
-      xmlContent = xmlContent.replace(/<RutaFondo>.*?<\/RutaFondo>/, `<RutaFondo>${fondoPath}</RutaFondo>`);
+      xmlContent = xmlContent.replace(/<RutaFondo>.*?<\/RutaFondo>/, `<RutaFondo>${finalPath}</RutaFondo>`);
     } else {
-      xmlContent = xmlContent.replace('</Main>', `  <RutaFondo>${fondoPath}</RutaFondo>\n</Main>`);
+      xmlContent = xmlContent.replace('</Main>', `  <RutaFondo>${finalPath}</RutaFondo>\n</Main>`);
     }
   } else {
     xmlContent = `<?xml version="1.0" encoding="utf-8"?>
 <Main>
-  <RutaFondo>${fondoPath}</RutaFondo>
+  <RutaFondo>${finalPath}</RutaFondo>
 </Main>`;
   }
 
@@ -251,7 +261,11 @@ function getFondo() {
   const match = raw.match(/<RutaFondo>(.*?)<\/RutaFondo>/);
   const value = match ? String(match[1] || '').trim() : '';
   if (!value) return null;
+  
+  // Si la ruta guardada es absoluta (por compatibilidad), la devolvemos
   if (path.isAbsolute(value)) return value;
+  
+  // Si es relativa, la resolvemos respecto al directorio del XML
   return path.resolve(path.dirname(configPath), value);
 }
 

@@ -8,12 +8,13 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const sql = require('mssql');
 
-// ── Leer Config.xml directamente ─────────────────────────────
-const fs = require('fs');
-const configPath = path.join(__dirname, '..', 'dist', 'Config.xml');
+// ── Leer Config.xml desde userData ─────────────────────────────
+const { app } = require('electron');
+const configPath = path.join(process.env.APPDATA, 'tareasgforma', 'Config.xml');
 if (!fs.existsSync(configPath)) {
-  console.error('No se encontró dist/Config.xml');
+  console.error('No se encontró Config.xml en ' + configPath);
   process.exit(1);
+}
 }
 const raw = fs.readFileSync(configPath, 'utf-8');
 
