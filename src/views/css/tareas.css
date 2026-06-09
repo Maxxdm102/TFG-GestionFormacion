@@ -107,3 +107,9 @@
 /* Modal: asignar tiempos */
 .tiempos-row { display:grid; grid-template-columns:1fr 160px 140px; gap:10px; align-items:end; }
 .tiempos-actions { display:flex; justify-content:flex-end; margin-top:8px; }
+
+/* Main tabs */
+.main-tabs { display:flex; gap:20px; align-items:center; margin-right: 20px; }
+.main-tab { background:none; border:none; padding:0 0 4px 0; font-size:14px; font-weight:600; color:var(--text3); cursor:pointer; text-transform:uppercase; letter-spacing:0.5px; border-bottom:2px solid transparent; transition:color 0.2s, border-color 0.2s; }
+.main-tab.active { color:var(--text); border-color:var(--accent); }
+.main-tab:hover:not(.active) { color:var(--text2); }

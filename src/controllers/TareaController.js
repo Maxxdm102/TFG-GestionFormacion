@@ -32,10 +32,15 @@ class TareaController {
 
   _calcularEstado(tarea) {
     const hoy = localISODate();
-    if (tarea.fechaComprobacion && tarea.fechaComprobacion === hoy) return 'comprobada';
-    if (tarea.fechaEspera && tarea.fechaEspera === hoy) return 'espera';
-    if (tarea.fechaFin && tarea.fechaFin === hoy) return 'realizada';
-    if (tarea.fechaInicio && tarea.fechaInicio === hoy) return 'iniciada';
+    const isoComp = tarea.fechaComprobacion ? String(tarea.fechaComprobacion).substring(0, 10) : '';
+    const isoFin = tarea.fechaFin ? String(tarea.fechaFin).substring(0, 10) : '';
+    const isoEspera = tarea.fechaEspera ? String(tarea.fechaEspera).substring(0, 10) : '';
+    const isoInicio = tarea.fechaInicio ? String(tarea.fechaInicio).substring(0, 10) : '';
+
+    if (isoComp && isoComp <= hoy) return 'comprobada';
+    if (isoFin && isoFin <= hoy) return 'realizada';
+    if (isoEspera && isoEspera <= hoy) return 'espera';
+    if (isoInicio && isoInicio <= hoy) return 'iniciada';
     return 'asignada';
   }
 
@@ -85,14 +90,42 @@ class TareaController {
       if (!datos.estado) datos.estado = this._calcularEstado(datos);
       if (!datos.fechaCreacion) datos.fechaCreacion = localISODate();
       // Prioridad automática: MAX(prioridad)+1 para evitar duplicados por empleado
-      if (datos.idPersonalAsigna) {
+      // Solo si la tarea NO está finalizada ni comprobada (y la fecha <= hoy)
+      const hoy = localISODate();
+      const isoComp = datos.fechaComprobacion ? String(datos.fechaComprobacion).substring(0, 10) : '';
+      const isoFin = datos.fechaFin ? String(datos.fechaFin).substring(0, 10) : '';
+      const estaTerminada = (isoComp && isoComp <= hoy) || (isoFin && isoFin <= hoy);
+      
+      if (datos.idPersonalAsigna && !estaTerminada) {
         const next = await TareaModel.getNextPrioridadForAsignado(
           datos.idPersonalAsigna,
           datos.idSociedad || null
         );
+        console.log('[DEBUG] calcular prioridad siguiente para', datos.idPersonalAsigna, '=>', next);
         if (next != null) datos.prioridad = next;
+      } else {
+        // Si está finalizada o comprobada, NO debe tener prioridad bajo ninguna circunstancia
+        datos.prioridad = null;
       }
       const id = await TareaModel.create(datos);
+
+      // Asegurar unicidad de prioridades: reordenar o recalcular
+      if (datos && datos.idPersonalAsigna) {
+        if (datos.prioridad != null) {
+          try {
+            await TareaModel.reordenarPrioridades({
+              idTarea: id,
+              idPersonalAsigna: datos.idPersonalAsigna,
+              prioridadNueva: datos.prioridad,
+              idSociedad: datos.idSociedad || null
+            });
+          } catch (e) {
+            console.warn('[WARN] reordenarPrioridades falló tras create:', e.message);
+          }
+        }
+        // Forzar recálculo completo para evitar huecos o NULLs (especialmente si falló lo anterior)
+        await TareaModel.recalcularPrioridadesParaAsignado(datos.idPersonalAsigna);
+      }
 
       // El SP up_bp_Tareas_Select tiene INNER JOINs obligatorios con gf_Clientes y TareasTipos.
       // Si la tarea se creó sin IdCliente o IdTareaTipo, el SP devuelve null.
@@ -132,6 +165,12 @@ class TareaController {
       }
 
       console.log('[DEBUG] tareas:create id', id, 'tarea', tarea ? { IdTarea: tarea.IdTarea, Estado: tarea.Estado } : null);
+      try {
+        const prioridadStored = tarea ? (tarea.Prioridad ?? tarea.Prioridad) : null;
+        console.log('[DEBUG] prioridad en BD tras create:', prioridadStored);
+      } catch (e) {
+        console.warn('[WARN] no pude leer prioridad tras create:', e.message);
+      }
       return { ok: true, data: tarea };
     } catch (err) {
       return { ok: false, error: err.message };
@@ -142,7 +181,21 @@ class TareaController {
     try {
       const errores = this._validar(datos);
       if (errores.length > 0) return { ok: false, error: errores.join(', ') };
+
+      // Obtener la tarea actual para ver si cambia el responsable
+      const tareaPrevia = await TareaModel.getById(id);
+      const idPersonalAsignaPrevio = tareaPrevia ? (tareaPrevia.IdPersonalAsignado ?? tareaPrevia.idPersonalAsigna) : null;
+
       datos.estado = this._calcularEstado(datos);
+
+      // Si la tarea se marca como finalizada o comprobada (y la fecha <= hoy), quitamos la prioridad
+      const hoy = localISODate();
+      const isoComp = datos.fechaComprobacion ? String(datos.fechaComprobacion).substring(0, 10) : '';
+      const isoFin = datos.fechaFin ? String(datos.fechaFin).substring(0, 10) : '';
+      if ((isoFin && isoFin <= hoy) || (isoComp && isoComp <= hoy)) {
+        datos.prioridad = null;
+      }
+
       if (datos && datos.idPersonalAsigna && datos.prioridad != null) {
         await TareaModel.reordenarPrioridades({
           idTarea: id,
@@ -152,6 +205,17 @@ class TareaController {
         });
       }
       await TareaModel.update(id, datos);
+
+      // Asegurar unicidad de prioridades: recalcular siempre para el responsable actual
+      if (datos.idPersonalAsigna) {
+        await TareaModel.recalcularPrioridadesParaAsignado(datos.idPersonalAsigna);
+      }
+      
+      // Si el responsable cambió, recalcular también para el responsable anterior
+      if (idPersonalAsignaPrevio != null && idPersonalAsignaPrevio !== datos.idPersonalAsigna) {
+        await TareaModel.recalcularPrioridadesParaAsignado(idPersonalAsignaPrevio);
+      }
+
       const tarea = await TareaModel.getById(id);
       return { ok: true, data: tarea };
     } catch (err) {

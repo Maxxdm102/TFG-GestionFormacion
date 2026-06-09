@@ -19,8 +19,8 @@ class PresenciaModel {
     const pool = await getPool();
     const request = pool.request();
     request.output('IdControlPresenciaFichaje', sql.Int);
-    request.input('IdPersonal',                    sql.Int,         idPersonal);
-    request.input('IdControlPresenciaTipoEvento',  sql.Int,         idControlPresenciaTipoEvento);
+    request.input('IdPersonal',                    sql.Int,          idPersonal);
+    request.input('IdControlPresenciaTipoEvento',  sql.Int,          idControlPresenciaTipoEvento);
     if (ipDispositivo) request.input('IpDispositivo', sql.VarChar(100), ipDispositivo);
     if (comentarios)   request.input('Comentarios',   sql.VarChar(500), comentarios);
 

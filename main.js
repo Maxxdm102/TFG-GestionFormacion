@@ -10,6 +10,7 @@ const { registerIpcHandlers } = require('./src/ipc/ipcHandlers');
 const { checkForUpdates } = require('./src/updater-check');
 
 let mainWindow;
+let loginWindow;
 let conexionWindow;
 let tiemposWindow;
 let horariosWindow;
@@ -24,8 +25,12 @@ let presupuestosOwnerWindow;
 let clientesOwnerWindow;
 let contactosOwnerWindow;
 
-function createLoginWindow() {
-  mainWindow = new BrowserWindow({
+function createLoginWindow(asModal = false) {
+  if (loginWindow) {
+    loginWindow.focus();
+    return;
+  }
+  let options = {
     width: 460,
     height: 680,
     resizable: false,
@@ -42,17 +47,29 @@ function createLoginWindow() {
       sandbox: false
     },
     show: false
-  });
+  };
 
-  mainWindow.loadFile(path.join(__dirname, 'src/views/inteco-login.html'));
-  mainWindow.once('ready-to-show', () => {
+  if (asModal && mainWindow) {
+    options.parent = mainWindow;
+    options.modal = true;
+  }
+
+  loginWindow = new BrowserWindow(options);
+
+  loginWindow.loadFile(path.join(__dirname, 'src/views/inteco-login.html'));
+  loginWindow.once('ready-to-show', () => {
     setTimeout(() => {
-      mainWindow.show();
+      loginWindow.show();
       // Si hay datos de actualización, los enviamos al login
       if (global.updateData) {
-        mainWindow.webContents.send('updater:available', global.updateData);
+        loginWindow.webContents.send('updater:available', global.updateData);
       }
     }, 150);
+  });
+
+  loginWindow.on('closed', () => {
+    loginWindow = null;
+    if (!mainWindow) app.quit();
   });
 }
 
@@ -62,12 +79,22 @@ function createConexionWindow() {
     return;
   }
 
-  const [lx, ly] = mainWindow.getPosition();
-  const [lw, lh] = mainWindow.getSize();
   const winW = 500;
   const winH = 680;
-  const x = Math.round(lx + (lw - winW) / 2);
-  const y = Math.round(ly + (lh - winH) / 2);
+  let x;
+  let y;
+
+  if (mainWindow) {
+    const [lx, ly] = mainWindow.getPosition();
+    const [lw, lh] = mainWindow.getSize();
+    x = Math.round(lx + (lw - winW) / 2);
+    y = Math.round(ly + (lh - winH) / 2);
+  } else if (loginWindow) {
+    const [lx, ly] = loginWindow.getPosition();
+    const [lw, lh] = loginWindow.getSize();
+    x = Math.round(lx + (lw - winW) / 2);
+    y = Math.round(ly + (lh - winH) / 2);
+  }
 
   conexionWindow = new BrowserWindow({
     width: winW,
@@ -80,6 +107,7 @@ function createConexionWindow() {
     backgroundColor: '#00000000',
     roundedCorners: true,
     autoHideMenuBar: true,
+    center: (x == null),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -92,7 +120,7 @@ function createConexionWindow() {
   conexionWindow.loadFile(path.join(__dirname, 'src/views/inteco-conexion.html'));
 
   conexionWindow.once('ready-to-show', () => {
-    mainWindow.hide();
+    if (mainWindow) mainWindow.hide();
     conexionWindow.show();
   });
 
@@ -103,7 +131,12 @@ function createConexionWindow() {
 }
 
 function createMainAppWindow() {
-  const appWindow = new BrowserWindow({
+  if (mainWindow) {
+    mainWindow.reload();
+    return;
+  }
+
+  mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 900,
@@ -119,14 +152,10 @@ function createMainAppWindow() {
     show: false
   });
 
-  appWindow.loadFile(path.join(__dirname, 'src/views/index.html'));
+  mainWindow.loadFile(path.join(__dirname, 'src/views/index.html'));
 
-  appWindow.once('ready-to-show', () => {
-    appWindow.show();
-    if (mainWindow) {
-      mainWindow.close();
-      mainWindow = appWindow;
-    }
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
   });
 }
 
@@ -512,8 +541,20 @@ function createTareaWindow(context) {
 
 ipcMain.on('open-conexion', () => createConexionWindow());
 ipcMain.on('close-conexion', () => { if (conexionWindow) conexionWindow.close(); });
-ipcMain.on('login-success', () => createMainAppWindow());
-ipcMain.on('login-close', () => app.quit());
+ipcMain.on('open-login', () => {
+  createLoginWindow(true); // modal over mainWindow
+});
+ipcMain.on('login-success', () => {
+  createMainAppWindow();
+  if (loginWindow) loginWindow.close();
+});
+ipcMain.on('login-close', () => {
+  if (loginWindow) {
+    loginWindow.close();
+  } else {
+    app.quit();
+  }
+});
 
 ipcMain.on('updater:start-update', () => {
   const getUpdaterPath = () => {

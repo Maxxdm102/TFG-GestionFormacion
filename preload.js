@@ -9,6 +9,7 @@ const ALLOWED_INVOKE_CHANNELS = [
   'auth:login',
   'auth:checkWindows',
   'auth:getSession',
+  'auth:setAdminTarget',
   'db:testConnection',
   'db:saveConfig',
   'db:getConfig',
@@ -50,6 +51,7 @@ const ALLOWED_INVOKE_CHANNELS = [
 const ALLOWED_SEND_CHANNELS = [
   'open-conexion',
   'close-conexion',
+  'open-login',
   'login-success',
   'tiempos:open',
   'tiempos:setContext',

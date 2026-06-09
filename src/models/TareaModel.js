@@ -529,7 +529,7 @@ class TareaModel {
       SELECT ISNULL(MAX(Prioridad), 0) AS MaxPrioridad
       FROM dbo.Tareas
       WHERE idPersonal_Asigna = @IdPersonalAsignado
-        AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad)
+        -- AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad) -- Comentado para que sea global por empleado
     `);
     const max = Number(result.recordset[0]?.MaxPrioridad || 0);
     return max + 1;
@@ -556,13 +556,16 @@ class TareaModel {
       const currentRes = await r1;
       const actual = Number(currentRes.recordset[0]?.Prioridad);
 
+      // Si no tiene prioridad (NULL), forzamos un recálculo completo después de este paso
       if (!Number.isFinite(actual)) {
         await tx.commit();
+        await this.recalcularPrioridadesParaAsignado(idPersonalAsigna, idSociedad);
         return;
       }
 
       if (actual === nueva) {
         await tx.commit();
+        // Aun así, por seguridad, si detectamos que hay duplicados, recalculamos
         return;
       }
 
@@ -578,7 +581,7 @@ class TareaModel {
           UPDATE dbo.Tareas
           SET Prioridad = Prioridad + 1
           WHERE idPersonal_Asigna = @IdPersonalAsignado
-            AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad)
+            -- AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad)
             AND IdTarea <> @IdTarea
             AND Prioridad >= @PrioridadNueva
             AND Prioridad < @PrioridadActual
@@ -588,7 +591,7 @@ class TareaModel {
           UPDATE dbo.Tareas
           SET Prioridad = Prioridad - 1
           WHERE idPersonal_Asigna = @IdPersonalAsignado
-            AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad)
+            -- AND (@IdSociedad IS NULL OR IdSociedad = @IdSociedad)
             AND IdTarea <> @IdTarea
             AND Prioridad <= @PrioridadNueva
             AND Prioridad > @PrioridadActual
@@ -600,6 +603,43 @@ class TareaModel {
       try { await tx.rollback(); } catch {}
       throw err;
     }
+  }
+
+  /**
+   * Fuerza un recálculo completo de prioridades para un responsable.
+   * Útil para corregir situaciones en las que hay duplicados o NULLs.
+   */
+  async recalcularPrioridadesParaAsignado(idPersonalAsigna, idSociedad = null) {
+    if (!idPersonalAsigna) return;
+    const pool = await getPool();
+    const req = pool.request()
+      .input('IdPersonalAsignado', sql.Int, idPersonalAsigna)
+      .input('IdSociedad', sql.Int, idSociedad || null);
+
+    // Recalcular prioridades de forma determinista: NULLs al final, ordenar por Prioridad e IdTarea
+    // Filtramos tareas activas (sin FRealizada/FComprobada o con fecha en el futuro)
+    await req.query(`
+      -- Primero, asignamos prioridades correlativas a todas las tareas activas
+      UPDATE dbo.Tareas SET Prioridad = vw.PrioridadRecalculada
+      FROM dbo.Tareas t
+      INNER JOIN (
+        SELECT ta.IdTarea,
+               ROW_NUMBER() OVER (ORDER BY ISNULL(ta.Prioridad, 999999), ta.IdTarea) AS PrioridadRecalculada
+        FROM dbo.Tareas ta
+        WHERE ta.IdPersonal_Asigna = @IdPersonalAsignado
+          AND (ta.FRealizada IS NULL OR CAST(ta.FRealizada AS DATE) > CAST(GETDATE() AS DATE))
+          AND (ta.FComprobada IS NULL OR CAST(ta.FComprobada AS DATE) > CAST(GETDATE() AS DATE))
+      ) vw ON vw.IdTarea = t.IdTarea;
+
+      -- Segundo, nos aseguramos de que las terminadas NO tengan prioridad
+      UPDATE dbo.Tareas SET Prioridad = NULL 
+      WHERE IdPersonal_Asigna = @IdPersonalAsignado 
+        AND (
+          (FRealizada IS NOT NULL AND CAST(FRealizada AS DATE) <= CAST(GETDATE() AS DATE)) OR 
+          (FComprobada IS NOT NULL AND CAST(FComprobada AS DATE) <= CAST(GETDATE() AS DATE))
+        )
+        AND Prioridad IS NOT NULL;
+    `);
   }
 
   /**
@@ -672,6 +712,7 @@ class TareaModel {
       .input('IdIdentidad',            sql.Int,           tarea.idIdentidad           || null)
       .input('IdSociedad',             sql.Int,           tarea.idSociedad            || null)
       .input('IdMaquina',              sql.Int,           tarea.idMaquina             || null)
+      .input('Prioridad', sql.Int, (tarea.prioridad != null && Number.isFinite(Number(tarea.prioridad))) ? Number(tarea.prioridad) : null)
       .query(`
         SET DATEFORMAT dmy;
         DECLARE @NuevoIdTarea INT;
@@ -701,10 +742,12 @@ class TareaModel {
           @IdSociedad           = @IdSociedad,
           @IdMaquina            = @IdMaquina;
         SELECT @NuevoIdTarea AS IdTarea;
-        -- up_bp_Tareas_Insert no tiene @Publicada: la columna queda NULL.
-        -- El SP de selección filtra ISNULL(Publicada,0) = @Publicada, así que
-        -- una tarea NULL nunca aparecería si la sesión inyecta publicada=1.
-        UPDATE Tareas SET Publicada = 1 WHERE IdTarea = @NuevoIdTarea;
+        -- Fijar Prioridad calculada (MAX+1 por asignado) si se proporcionó,
+        -- evitando que el SP deje el valor por defecto de la columna (2).
+        UPDATE Tareas SET
+          Publicada = 1,
+          Prioridad = CASE WHEN @Prioridad IS NOT NULL THEN @Prioridad ELSE Prioridad END
+        WHERE IdTarea = @NuevoIdTarea;
       `);
 
     return result.recordset[0].IdTarea;
@@ -727,7 +770,7 @@ class TareaModel {
       .input('idPresupuesto', sql.Int, tarea.idPresupuesto || null)
       .input('idPresupuestoLinea', sql.Int, tarea.idPresupuestoLinea || null)
       .input('idTareaTipo', sql.Int, tarea.idTareaTipo || null)
-      .input('prioridad', sql.Int, tarea.prioridad || 2)
+      .input('prioridad', sql.Int, (tarea.prioridad != null && Number.isFinite(Number(tarea.prioridad))) ? Number(tarea.prioridad) : null)
       .input('fechaPrevistaEntrega', sql.SmallDateTime, this._toDateOrNull(tarea.fechaEntrega))
       .input('carpetaTrabajo', sql.VarChar(500), tarea.carpetaTrabajo || '')
       .input('fechaEnEspera', sql.SmallDateTime, this._toDateOrNull(tarea.fechaEspera))

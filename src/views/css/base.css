@@ -520,3 +520,82 @@ textarea.form-control { resize: vertical; min-height: 70px; }
 .toast.toast-warning { background: var(--warning); }
 .toast.toast-success { background: var(--success); }
 .toast.toast-info    { background: var(--accent); }
+
+/* ── PROFILE WIDGET ── */
+.profile-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  transition: background 0.15s;
+  border: 1px solid transparent;
+  margin-right: 10px;
+}
+.profile-wrap:hover {
+  background: var(--surface2);
+  border-color: var(--border);
+}
+.pw-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pw-text {
+  display: flex;
+  flex-direction: column;
+}
+.pw-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.1;
+}
+.pw-role {
+  font-size: 11px;
+  color: var(--text3);
+  line-height: 1.1;
+}
+
+/* ── FICHAJE WIDGET ── */
+.connection-widget {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+  background: transparent;
+  border: none;
+}
+.connection-widget:hover {
+  background: var(--surface2);
+}
+.cw-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px var(--success);
+}
+.cw-text {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+.cw-db {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+.cw-server {
+  font-size: 11px;
+  color: var(--text3);
+}

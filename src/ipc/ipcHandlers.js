@@ -11,6 +11,7 @@ const { authenticateUser, checkWindowsUser, testConnectionWith, saveConfig, read
 const { checkForUpdates, launchUpdaterAndQuit } = require('../update/updateService');
 
 const TareaController = require('../controllers/TareaController');
+const TareaModel = require('../models/TareaModel');
 const ClienteController = require('../controllers/ClienteController');
 const PresupuestoController = require('../controllers/PresupuestoController');
 const ContactoController = require('../controllers/ContactoController');
@@ -191,9 +192,11 @@ function normalizeFichajeForAudit(row) {
     null;
   const comentarios = row?.Comentarios ?? row?.Comentario ?? row?.Observaciones ?? null;
   const dispositivo = row?.IpDispositivo ?? row?.Dispositivo ?? row?.Equipo ?? null;
+  const idPersonal = row?.IdPersonal ?? row?.idPersonal ?? null;
 
   return {
     id: idRaw != null ? Number(idRaw) : null,
+    idPersonal: idPersonal != null ? Number(idPersonal) : null,
     tipoEvento: tipoRaw != null ? Number(tipoRaw) : null,
     fechaHoraIso: dt ? dt.toISOString() : null,
     fechaHoraLocal: dt ? dt.toLocaleString('es-ES', { hour12: false }) : null,
@@ -207,8 +210,11 @@ function normalizeAfterFromPayload(payload, before = null) {
   const dt = parseFichajeDateFromPayload(payload);
   const idRaw = payload?.idControlPresenciaFichaje ?? before?.id ?? null;
   const tipoRaw = payload?.idControlPresenciaTipoEvento ?? before?.tipoEvento ?? null;
+  const idPersonal = payload?.idPersonal ?? before?.idPersonal ?? null;
+
   return {
     id: idRaw != null ? Number(idRaw) : null,
+    idPersonal: idPersonal != null ? Number(idPersonal) : null,
     tipoEvento: tipoRaw != null ? Number(tipoRaw) : null,
     fechaHoraIso: dt ? dt.toISOString() : null,
     fechaHoraLocal: dt ? dt.toLocaleString('es-ES', { hour12: false }) : null,
@@ -288,11 +294,12 @@ async function insertHorarioAuditLogs(entries, session) {
         .input('ValorAnterior', sql.NVarChar(255), truncateValue(entry.valorAnterior, 255))
         .input('ValorNuevo', sql.NVarChar(255), truncateValue(entry.valorNuevo, 255))
         .input('Motivo', sql.NVarChar(500), truncateValue(entry.motivo, 500))
+        .input('IdPersonal', sql.Int, entry.idPersonal || null)
         .query(`
           INSERT INTO dbo.ControlPresencia_Fichajes_Logs
-          (IdControlPresenciaFichaje, FechaHoraModificacion, UsuarioModificacion, Accion, CampoModificado, ValorAnterior, ValorNuevo, Motivo)
+          (IdControlPresenciaFichaje, FechaHoraModificacion, UsuarioModificacion, Accion, CampoModificado, ValorAnterior, ValorNuevo, Motivo, IdPersonal)
           VALUES
-          (@IdControlPresenciaFichaje, @FechaHoraModificacion, @UsuarioModificacion, @Accion, @CampoModificado, @ValorAnterior, @ValorNuevo, @Motivo)
+          (@IdControlPresenciaFichaje, @FechaHoraModificacion, @UsuarioModificacion, @Accion, @CampoModificado, @ValorAnterior, @ValorNuevo, @Motivo, @IdPersonal)
         `);
     }
   } catch (err) {
@@ -309,14 +316,18 @@ function parseDateOnly(value) {
   return d;
 }
 
-async function fetchFichajesLogs({ desde, hasta }) {
+async function fetchFichajesLogs({ desde, hasta, idPersonal = null } = {}) {
   const pool = await getPool();
   const desdeDate = parseDateOnly(desde);
   const hastaDate = parseDateOnly(hasta);
   const request = pool.request()
     .input('Desde', sql.DateTime, desdeDate)
-    .input('Hasta', sql.DateTime, hastaDate);
+    .input('Hasta', sql.DateTime, hastaDate)
+    .input('IdPersonal', sql.Int, idPersonal);
 
+  // Unir con la tabla de fichajes para poder filtrar por IdPersonal.
+  // NOTA: Si el fichaje fue eliminado, la unión LEFT JOIN devuelve NULL en f.IdPersonal.
+  // Para logs de tipo DELETE, necesitamos asegurar que se muestren.
   const query = `
     SELECT
       l.IdControlPresenciaFichajeLog,
@@ -329,8 +340,10 @@ async function fetchFichajesLogs({ desde, hasta }) {
       l.ValorNuevo,
       l.Motivo
     FROM dbo.ControlPresencia_Fichajes_Logs l
+    LEFT JOIN dbo.ControlPresencia_Fichajes f ON f.IdControlPresenciaFichaje = l.IdControlPresenciaFichaje
     WHERE (@Desde IS NULL OR l.FechaHoraModificacion >= @Desde)
       AND (@Hasta IS NULL OR l.FechaHoraModificacion < DATEADD(DAY, 1, @Hasta))
+      AND (@IdPersonal IS NULL OR (l.IdPersonal = @IdPersonal) OR (l.IdPersonal IS NULL AND f.IdPersonal = @IdPersonal))
     ORDER BY l.FechaHoraModificacion DESC, l.IdControlPresenciaFichajeLog DESC
   `;
 
@@ -377,6 +390,14 @@ function registerIpcHandlers() {
     }
   });
 
+  ipcMain.handle('auth:setAdminTarget', async (_e, idPersonal) => {
+    if (currentSession && currentSession.isAdmin) {
+      currentSession._adminTargetIdPersonal = idPersonal;
+      return { ok: true };
+    }
+    return { ok: false, error: 'Not admin' };
+  });
+
   // ── SESIÓN ACTUAL ────────────────────────────────────────────
   ipcMain.handle('auth:getSession', async () => {
     if (!currentSession) return { ok: false, data: null };
@@ -387,7 +408,9 @@ function registerIpcHandlers() {
         // Ajusta los nombres de columna si difieren en tu BD.
         id: currentSession.Id || currentSession.IdIdentidad || null,
         idPersonal: currentSession._idPersonal ?? null,
+        _adminTargetIdPersonal: currentSession._adminTargetIdPersonal ?? null,
         nombre: currentSession.Nombre || currentSession.NombreCompleto || '',
+        isAdmin: currentSession.isAdmin || false
       }
     };
   });
@@ -470,10 +493,13 @@ function registerIpcHandlers() {
         const sesionIdSociedad = toIntOrNull(currentSession.IdSociedad ?? currentSession.IdSociedadId);
         if (sesionIdSociedad != null) finalFiltros.idSociedad = sesionIdSociedad;
       }
-      // Filtrar tareas por el IdPersonal del usuario autenticado.
-      // _idPersonal se resuelve al hacer login cruzando gf_Personal.IdIdentidad.
+      // Filtrar tareas por el IdPersonal del usuario autenticado, a menos que sea admin.
       if (finalFiltros.idPersonalAsignado == null) {
-        if (currentSession._idPersonal != null) {
+        if (currentSession.isAdmin) {
+          if (currentSession._adminTargetIdPersonal != null) {
+            finalFiltros.idPersonalAsignado = currentSession._adminTargetIdPersonal;
+          }
+        } else if (currentSession._idPersonal != null) {
           finalFiltros.idPersonalAsignado = currentSession._idPersonal;
         } else {
           // No existe mapeo entre IdIdentidad e IdPersonal: por seguridad
@@ -500,6 +526,16 @@ function registerIpcHandlers() {
   ipcMain.handle('tareas:update', async (_e, { id, datos }) => TareaController.update(id, datos));
   ipcMain.handle('tareas:delete', async (_e, id) => TareaController.delete(id));
 
+  // Forzar recálculo de prioridades para un responsable (útil para reparación manual)
+  ipcMain.handle('tareas:recalcularPrioridades', async (_e, { idPersonalAsignado, idSociedad = null }) => {
+    try {
+      await TareaModel.recalcularPrioridadesParaAsignado(idPersonalAsignado, idSociedad || null);
+      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  });
+
   // Tiempos de tarea
   ipcMain.handle('tareas:getTiempos', async (_e, idTarea) => TareaController.getTiempos(idTarea));
 
@@ -519,8 +555,12 @@ function registerIpcHandlers() {
         const sesionIdSociedad = toIntOrNull(currentSession.IdSociedad ?? currentSession.IdSociedadId);
         if (sesionIdSociedad != null) finalFiltros.idSociedad = sesionIdSociedad;
       }
-      // Forzar filtro por responsable autenticado
-      if (currentSession._idPersonal != null) {
+      // Forzar filtro por responsable autenticado, a menos que sea admin
+      if (currentSession.isAdmin) {
+        if (currentSession._adminTargetIdPersonal != null) {
+          finalFiltros.idPersonalAsignado = currentSession._adminTargetIdPersonal;
+        }
+      } else if (currentSession._idPersonal != null) {
         finalFiltros.idPersonalAsignado = currentSession._idPersonal;
       } else {
         return { ok: true, data: [] };
@@ -591,10 +631,15 @@ function registerIpcHandlers() {
   });
 
   // ── PRESENCIA ────────────────────────────────────────────────
-  ipcMain.handle('presencia:getEstadoActual', async () => {
+  ipcMain.handle('presencia:getEstadoActual', async (_e, { idPersonal: payloadIdPersonal } = {}) => {
     if (!currentSession) return { ok: false, error: 'No autorizado' };
-    const idPersonal = currentSession._idPersonal;
-    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesi\u00f3n' };
+    // Permitir que el frontend solicite un idPersonal explícito solo si el usuario es admin
+    let idPersonal = currentSession.isAdmin ? (payloadIdPersonal ?? currentSession._adminTargetIdPersonal) : currentSession._idPersonal;
+    // Seguridad adicional: si no es admin y se proporcionó un idPersonal distinto, rechazar
+    if (!currentSession.isAdmin && payloadIdPersonal != null && payloadIdPersonal !== currentSession._idPersonal) {
+      return { ok: false, error: 'No autorizado para consultar otros empleados' };
+    }
+    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesión' };
     try {
       const data = await PresenciaController.getEstadoActual(idPersonal);
       return { ok: true, data };
@@ -603,10 +648,14 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle('presencia:registrarFichaje', async (_e, { idControlPresenciaTipoEvento, comentarios }) => {
+  ipcMain.handle('presencia:registrarFichaje', async (_e, { idControlPresenciaTipoEvento, comentarios, idPersonal: payloadIdPersonal } = {}) => {
     if (!currentSession) return { ok: false, error: 'No autorizado' };
-    const idPersonal = currentSession._idPersonal;
-    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesi\u00f3n' };
+    // Permitir especificar idPersonal en el payload solo si es admin o si coincide con el del propio usuario
+    if (payloadIdPersonal != null && !currentSession.isAdmin && payloadIdPersonal !== currentSession._idPersonal) {
+      return { ok: false, error: 'No autorizado para fichar por otros empleados' };
+    }
+    const idPersonal = currentSession.isAdmin ? (payloadIdPersonal ?? currentSession._adminTargetIdPersonal) : currentSession._idPersonal;
+    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesión' };
     try {
       const ipDispositivo = getLocalIpAddress();
       const resp = await PresenciaController.registrarFichaje(idPersonal, idControlPresenciaTipoEvento, ipDispositivo, comentarios);
@@ -640,6 +689,8 @@ function registerIpcHandlers() {
         const fechaHoraDespues = formatLogDateTime(after?.fechaHoraIso);
         const cambios = [];
 
+        const idPersonal = before?.idPersonal || after?.idPersonal || data.idPersonal || null;
+
         if (before && after) {
           if (before.fechaHoraIso !== after.fechaHoraIso) {
             cambios.push({
@@ -649,7 +700,8 @@ function registerIpcHandlers() {
               campoModificado: 'FechaHora',
               valorAnterior: fechaHoraAntes,
               valorNuevo: fechaHoraDespues,
-              motivo: motivo || null
+              motivo: motivo || null,
+              idPersonal: idPersonal
             });
           }
           if (before.tipoEvento !== after.tipoEvento) {
@@ -660,7 +712,8 @@ function registerIpcHandlers() {
               campoModificado: 'IdControlPresenciaTipoEvento',
               valorAnterior: before.tipoEvento != null ? String(before.tipoEvento) : null,
               valorNuevo: after.tipoEvento != null ? String(after.tipoEvento) : null,
-              motivo: motivo || null
+              motivo: motivo || null,
+              idPersonal: idPersonal
             });
           }
         }
@@ -673,7 +726,8 @@ function registerIpcHandlers() {
             campoModificado: 'Registro',
             valorAnterior: buildLogResumen(before),
             valorNuevo: buildLogResumen(after),
-            motivo: motivo || null
+            motivo: motivo || null,
+            idPersonal: idPersonal
           });
         }
 
@@ -703,9 +757,11 @@ function registerIpcHandlers() {
           campoModificado: 'Registro',
           valorAnterior: buildLogResumen(before),
           valorNuevo: null,
-          motivo: motivo || null
+          motivo: motivo,
+          idPersonal: before?.idPersonal || null
         }];
         await insertHorarioAuditLogs(cambios, currentSession);
+
       }
 
       return result;
@@ -903,8 +959,8 @@ function registerIpcHandlers() {
 
   ipcMain.handle('presencia:getFichajesPersonales', async (_e, { fechaFiltro } = {}) => {
     if (!currentSession) return { ok: false, error: 'No autorizado' };
-    const idPersonal = currentSession._idPersonal;
-    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesi\u00f3n' };
+    const idPersonal = currentSession.isAdmin ? currentSession._adminTargetIdPersonal : currentSession._idPersonal;
+    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesión' };
     try {
       const data = await PresenciaController.getFichajesPersonales(idPersonal, fechaFiltro || null);
       return { ok: true, data };
@@ -913,20 +969,72 @@ function registerIpcHandlers() {
     }
   });
 
-  ipcMain.handle('presencia:getFichajesLogs', async (_e, { desde, hasta } = {}) => {
+  ipcMain.handle('presencia:getFichajesLogs', async (_e, { desde, hasta, idPersonal: payloadIdPersonal } = {}) => {
     if (!currentSession) return { ok: false, error: 'No autorizado' };
+    console.log('[DEBUG] presencia:getFichajesLogs called, payload:', { desde, hasta, payloadIdPersonal });
+    console.log('[DEBUG] presencia:getFichajesLogs session:', { idPersonal: currentSession._idPersonal, _adminTargetIdPersonal: currentSession._adminTargetIdPersonal, isAdmin: currentSession.isAdmin });
+    // Permitir que el frontend especifique un idPersonal sólo si el usuario es admin
+    let idPersonal;
+    if (currentSession.isAdmin) {
+      idPersonal = payloadIdPersonal ?? currentSession._adminTargetIdPersonal;
+    } else {
+      // Seguridad adicional: si no es admin y se proporcionó idPersonal distinto, rechazar
+      if (payloadIdPersonal != null && payloadIdPersonal !== currentSession._idPersonal) {
+        return { ok: false, error: 'No autorizado para consultar otros empleados' };
+      }
+      idPersonal = currentSession._idPersonal;
+    }
+
+    if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesión' };
     try {
-      const data = await fetchFichajesLogs({ desde, hasta });
-      return { ok: true, data };
+      const data = await fetchFichajesLogs({ desde, hasta, idPersonal });
+      const meta = { idPersonal };
+      // Si no hay datos, recoger diagnósticos adicionales para investigar
+      if ((!data || !data.length) && idPersonal != null) {
+        try {
+          const pool = await getPool();
+          const totalRes = await pool.request().query('SELECT COUNT(1) AS cnt FROM dbo.ControlPresencia_Fichajes_Logs');
+          const totalLogs = totalRes.recordset[0]?.cnt ?? 0;
+          const personalRes = await pool.request()
+            .input('IdPersonal', sql.Int, idPersonal)
+            .query(`
+              SELECT COUNT(1) AS cnt
+              FROM dbo.ControlPresencia_Fichajes_Logs l
+              LEFT JOIN dbo.ControlPresencia_Fichajes f ON f.IdControlPresenciaFichaje = l.IdControlPresenciaFichaje
+              WHERE f.IdPersonal = @IdPersonal
+            `);
+          const logsForPersonal = personalRes.recordset[0]?.cnt ?? 0;
+          const sampleRes = await pool.request().query('SELECT TOP 5 * FROM dbo.ControlPresencia_Fichajes_Logs ORDER BY FechaHoraModificacion DESC');
+          meta.diagnostics = { totalLogs, logsForPersonal, sample: sampleRes.recordset || [] };
+        } catch (dx) {
+          console.warn('[DEBUG] fetchFichajesLogs diagnostics failed:', dx.message);
+        }
+      }
+      return { ok: true, data, meta };
     } catch (err) {
       return { ok: false, error: err.message };
     }
   });
 
-  ipcMain.handle('presencia:exportFichajesLogsPdf', async (_event, { desde, hasta, userName } = {}) => {
+  ipcMain.handle('presencia:exportFichajesLogsPdf', async (_event, params = {}) => {
+    const { desde, hasta, userName, idPersonal: payloadIdPersonal } = params || {};
     if (!currentSession) return { ok: false, error: 'No autorizado' };
+    console.log('[DEBUG] presencia:exportFichajesLogsPdf called, payload:', { desde, hasta, userName, payloadIdPersonal });
+    console.log('[DEBUG] presencia:exportFichajesLogsPdf session:', { idPersonal: currentSession._idPersonal, _adminTargetIdPersonal: currentSession._adminTargetIdPersonal, isAdmin: currentSession.isAdmin });
     try {
-      const rows = await fetchFichajesLogs({ desde, hasta });
+      // Allow optional idPersonal in request for admins
+      let idPersonal;
+      if (currentSession.isAdmin) {
+        idPersonal = payloadIdPersonal ?? currentSession._adminTargetIdPersonal;
+      } else {
+        if (payloadIdPersonal != null && payloadIdPersonal !== currentSession._idPersonal) {
+          return { ok: false, error: 'No autorizado para consultar otros empleados' };
+        }
+        idPersonal = currentSession._idPersonal;
+      }
+
+      if (idPersonal == null) return { ok: false, error: 'IdPersonal no disponible en la sesión' };
+      const rows = await fetchFichajesLogs({ desde, hasta, idPersonal });
 
       const today = new Date();
       const fallbackDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

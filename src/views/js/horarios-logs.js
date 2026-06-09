@@ -134,7 +134,15 @@ async function cargarLogs() {
   }
 
   const { desde, hasta } = buildFiltros();
-  const res = await invokeApi('presencia:getFichajesLogs', { desde, hasta });
+  const payload = { desde, hasta };
+  if (state.session) {
+    if (state.session.isAdmin && state.session._adminTargetIdPersonal != null) {
+      payload.idPersonal = state.session._adminTargetIdPersonal;
+    } else if (!state.session.isAdmin && state.session.idPersonal != null) {
+      payload.idPersonal = state.session.idPersonal;
+    }
+  }
+  const res = await invokeApi('presencia:getFichajesLogs', payload);
   if (!res.ok) {
     if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--danger)">Error: ${escapeHtml(res.error || 'Error')}</td></tr>`;
     showToast('Error al cargar logs: ' + (res.error || 'Error desconocido'), 'warning');
@@ -151,7 +159,15 @@ async function generarPdf() {
   const { desde, hasta } = buildFiltros();
   showToast('Generando PDF...', 'info');
   const userName = document.getElementById('logs-user')?.textContent || '-';
-  const res = await invokeApi('presencia:exportFichajesLogsPdf', { desde, hasta, userName });
+  const pdfPayload = { desde, hasta, userName };
+  if (state.session) {
+    if (state.session.isAdmin && state.session._adminTargetIdPersonal != null) {
+      pdfPayload.idPersonal = state.session._adminTargetIdPersonal;
+    } else if (!state.session.isAdmin && state.session.idPersonal != null) {
+      pdfPayload.idPersonal = state.session.idPersonal;
+    }
+  }
+  const res = await invokeApi('presencia:exportFichajesLogsPdf', pdfPayload);
   if (res.ok) {
     showToast(`PDF generado en Descargas: ${res.fileName}`, 'success');
   } else {

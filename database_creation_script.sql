@@ -2672,7 +2672,13 @@ AS
 
 GO
 
--- Stored Procedure structure for dbo.up_ControlPresencia_Delete
+-- Add IdPersonal column to ControlPresencia_Fichajes_Logs
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('dbo.ControlPresencia_Fichajes_Logs') AND name = 'IdPersonal')
+BEGIN
+    ALTER TABLE dbo.ControlPresencia_Fichajes_Logs ADD IdPersonal INT NULL;
+END
+GO
+
 CREATE PROCEDURE [dbo].[up_ControlPresencia_Delete]
 (
 	@IdControlPresenciaFichaje INT
@@ -2690,13 +2696,14 @@ CREATE PROCEDURE [dbo].[up_ControlPresencia_Insert]
 	@IdPersonal INT,
 	@IdControlPresenciaTipoEvento INT,
 	@IpDispositivo VARCHAR(100) = NULL,
-	@Comentarios VARCHAR(500) = NULL
+	@Comentarios VARCHAR(500) = NULL,
+	@FechaHora DATETIME = NULL
 )
 AS
 	INSERT INTO dbo.ControlPresencia_Fichajes
-		(IdPersonal, IdControlPresenciaTipoEvento, IpDispositivo, Comentarios)
+		(IdPersonal, IdControlPresenciaTipoEvento, IpDispositivo, Comentarios, FechaHora)
 	VALUES
-		(@IdPersonal, @IdControlPresenciaTipoEvento, @IpDispositivo, @Comentarios)
+		(@IdPersonal, @IdControlPresenciaTipoEvento, @IpDispositivo, @Comentarios, ISNULL(@FechaHora, GETUTCDATE()))
 
 	SET @IdControlPresenciaFichaje = SCOPE_IDENTITY()
 
@@ -3785,9 +3792,16 @@ AS
 
 	--SELECT @CosteHora = ISNULL(CosteHora,0) FROM dbo.gf_Personal WHERE IdPersonal = @IdPersonalAsignado Victor 02/03/2026 (no existe el campo de coste)
 
-	SET @Prioridad = 1
-
-	SELECT @Prioridad = MAX(ISNULL( Prioridad ,0)) + 1 FROM dbo.Tareas WHERE IdPersonal_Asigna = @IdPersonalAsignado
+	-- Si la tarea NO tiene fecha de fin ni de comprobación, le asignamos la siguiente prioridad
+	IF @FechaPrevistaEntrega IS NULL AND @FechaEnEspera IS NULL AND @FechaFin IS NULL AND @FechaComprobacion IS NULL
+		BEGIN
+			SET @Prioridad = 1
+			SELECT @Prioridad = ISNULL(MAX(Prioridad), 0) + 1 FROM dbo.Tareas WHERE IdPersonal_Asigna = @IdPersonalAsignado
+		END
+	ELSE
+		BEGIN
+			SET @Prioridad = NULL
+		END
 	
 	IF @IdSociedad IS NULL 
 		BEGIN
@@ -4323,12 +4337,11 @@ AS
 		dbo.Tareas t
 	INNER JOIN  
 		(	SELECT	ta.Idtarea,
-					ROW_NUMBER() OVER (ORDER BY ta.Prioridad) AS PrioridadRecalculada
+					ROW_NUMBER() OVER (ORDER BY ISNULL(ta.Prioridad, 999999), ta.Idtarea) AS PrioridadRecalculada
 			FROM	dbo.Tareas ta
 			WHERE	ta.IdPersonal_Asigna = @IdPersonalAsignado
 				AND ta.FRealizada IS NULL
 		) vw ON vw.Idtarea = t.Idtarea
-
 	-- Ponemos la prioridad a NULL en todas las tareas ya finalizadas del personal asignado
 	UPDATE dbo.Tareas SET Prioridad = NULL
 	WHERE	Prioridad IS NOT NULL 

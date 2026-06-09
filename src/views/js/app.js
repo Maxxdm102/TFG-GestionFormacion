@@ -4,6 +4,7 @@
    ================================================== */
 
 const UI_ICONS = Object.freeze({
+  user: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   plus: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
   eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>',
   edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
@@ -193,7 +194,7 @@ function openTareaWindow(mode) {
 }
 
 const menus = [
-  'general', 'ver', 'archivos', 'avisos',
+  'general', 'ver', 'archivos', 'avisos', 'perfil',
   'cli-general', 'cli-archivos', 'cli-avisos', 'cli-campos', 'cli-informes', 'cli-datos',
   'pre-general', 'pre-archivos', 'pre-avisos', 'pre-criterios', 'pre-informes', 'pre-datos',
   'con-general', 'con-otros', 'con-datos'
@@ -238,6 +239,15 @@ document.querySelectorAll('.dropdown').forEach(dd => {
 let taskData = [];
 let selectedIdx = -1;
 let currentFiltros = {};
+let currentMainTab = 'activas';
+
+function setMainTab(tab) {
+  currentMainTab = tab;
+  document.querySelectorAll('.main-tab').forEach(el => el.classList.remove('active'));
+  const activeTab = document.getElementById('tab-' + tab);
+  if (activeTab) activeTab.classList.add('active');
+  cargarTareas(currentFiltros);
+}
 
 let clientesData = [];
 let clientesFullData = [];
@@ -973,10 +983,15 @@ function toIsoDate(value) {
 
 function calcularEstado(fInicio, fFin, fComprobacion, fEspera) {
   const hoy = todayISO();
-  if (fComprobacion && fComprobacion === hoy) return 'comprobada';
-  if (fEspera && fEspera === hoy) return 'espera';
-  if (fFin && fFin === hoy) return 'realizada';
-  if (fInicio && fInicio === hoy) return 'iniciada';
+  const isoComprobacion = toIsoDate(fComprobacion);
+  const isoFin = toIsoDate(fFin);
+  const isoInicio = toIsoDate(fInicio);
+  const isoEspera = toIsoDate(fEspera);
+
+  if (isoComprobacion && isoComprobacion <= hoy) return 'comprobada';
+  if (isoFin && isoFin <= hoy) return 'realizada';
+  if (isoEspera && isoEspera <= hoy) return 'espera';
+  if (isoInicio && isoInicio <= hoy) return 'iniciada';
   return 'asignada';
 }
 
@@ -992,8 +1007,15 @@ function estadoBadge(estado) {
 }
 
 function mapDbTask(d) {
-  const rawEstado = String(d.Estado || 'Asignada').trim().toLowerCase();
-  const estadoNorm = rawEstado === 'en espera' ? 'espera' : rawEstado;
+  const fCreacion = toIsoDate(d.FechaCreacion);
+  const fEntrega = toIsoDate(d.FechaPreviewEntrega);
+  const fInicio = toIsoDate(d.FechaInicio);
+  const fFin = toIsoDate(d.FechaFin);
+  const fComprobacion = toIsoDate(d.FechaComprobacion);
+  const fEspera = toIsoDate(d.FechaEnEspera);
+
+  const estadoNorm = calcularEstado(fInicio, fFin, fComprobacion, fEspera);
+
   const idCliente = d.IdCliente ?? d.idCliente ?? null;
   const idPresupuesto = d.IdPresupuesto ?? null;
   const clienteNombreBase = d.Cliente || d.cliente || '';
@@ -1024,14 +1046,14 @@ function mapDbTask(d) {
     hReal: Number(d.HorasReales || 0),
     tipo: d.TipoTarea || '—',
     idTareaTipo: d.IdTareaTipo || null,
-    fCreacion: toIsoDate(d.FechaCreacion),
-    fEntrega: toIsoDate(d.FechaPreviewEntrega),
-    fInicio: toIsoDate(d.FechaInicio),
-    fFin: toIsoDate(d.FechaFin),
-    fComprobacion: toIsoDate(d.FechaComprobacion),
-    fEspera: toIsoDate(d.FechaEnEspera),
+    fCreacion,
+    fEntrega,
+    fInicio,
+    fFin,
+    fComprobacion,
+    fEspera,
     estado: estadoNorm,
-    prioridad: d.Prioridad || 2,
+    prioridad: d.Prioridad != null ? Number(d.Prioridad) : null,
     albaraneada: d.Albaraneado === 'Sí' || d.Albaraneado === 'Si' || d.Albaraneado === 1,
     comentario: d.Comentario || '',
     observaciones: d.Observaciones || '',
@@ -1056,7 +1078,7 @@ function toDbPayload(t) {
     fechaFin: normalizeDateForDb(t.fFin),
     fechaComprobacion: normalizeDateForDb(t.fComprobacion),
     fechaEspera: normalizeDateForDb(t.fEspera),
-    prioridad: Number(t.prioridad || 2),
+    prioridad: (t.prioridad != null ? Number(t.prioridad) : null),
     comentario: t.comentario || '',
     observaciones: t.observaciones || '',
     carpetaTrabajo: t.carpetaTrabajo || '',
@@ -1103,7 +1125,7 @@ function appendTaskRow(idx) {
   tr.innerHTML = `
     <td><span class="row-num">${d.id || (100000 + idx)}</span></td>
     <td>${estadoBadge(d.estado)}</td>
-    <td><span class="prio prio-${d.prioridad || 2}">${d.prioridad || 2}</span></td>
+    <td>${d.prioridad != null ? `<span class="prio prio-${d.prioridad}">${d.prioridad}</span>` : '<span style="color: var(--text3); font-weight: 500;">—</span>'}</td>
     <td>${formatFecha(d.fCreacion)}</td>
     <td>${formatFecha(d.fEntrega)}</td>
     <td>${formatFecha(d.fInicio)}</td>
@@ -1199,16 +1221,15 @@ function updateTareasStatus() {
   if (left) left.innerHTML = `${iconMarkup('search', 'status-filter-icon')}Filtrando: ${texto}`;
 
   if (right) right.textContent = `Registros: ${taskData.length} · Tiempo: 0 s`;
-  actualizarCountsTabs();
+  // actualizarCountsTabs() called in cargarTareas
 }
 
-function actualizarCountsTabs() {
+function actualizarCountsTabsAll(dataArray) {
   const tabs = document.querySelectorAll('.estado-tab');
   if (!tabs.length) return;
 
-  // Calculamos conteos del array taskData (que ya está filtrado localmente si corresponde)
   const counts = {
-    all: taskData.length,
+    all: dataArray.length,
     asignada: 0,
     iniciada: 0,
     realizada: 0,
@@ -1216,7 +1237,7 @@ function actualizarCountsTabs() {
     espera: 0
   };
 
-  taskData.forEach(t => {
+  dataArray.forEach(t => {
     const st = String(t.Estado || t.estado || '').toLowerCase();
     if (counts.hasOwnProperty(st)) {
       counts[st]++;
@@ -1257,6 +1278,11 @@ function applyLocalTaskFilters(items, filtros) {
   };
 
   return items.filter(t => {
+    const estadoTab = String(t.estado || '').toLowerCase();
+    const esFinalizada = estadoTab === 'realizada' || estadoTab === 'comprobada';
+    if (currentMainTab === 'activas' && esFinalizada) return false;
+    if (currentMainTab === 'finalizadas' && !esFinalizada) return false;
+
     if (f.estado) {
       if (norm(t.estado) !== norm(f.estado)) return false;
     }
@@ -1337,23 +1363,38 @@ async function cargarTareas(filtros = {}) {
   const tbody = document.getElementById('tasks-tbody');
   tbody.innerHTML = '<tr><td colspan="15" style="text-align:center;padding:20px;color:var(--text3)">Cargando...</td></tr>';
 
-  const res = await invokeApi('tareas:getAll', filtros);
+  // No enviar 'estado' al backend para poder obtener los counts de todas las pestañas
+  const filtrosBackend = { ...filtros };
+  delete filtrosBackend.estado;
+
+  const res = await invokeApi('tareas:getAll', filtrosBackend);
   if (!res.ok) {
     tbody.innerHTML = `<tr><td colspan="15" style="text-align:center;padding:20px;color:var(--danger)">Error: ${res.error}</td></tr>`;
     showToast('Error al cargar tareas: ' + res.error, 'warning');
     return;
   }
 
-  taskData = applyLocalTaskFilters(
+  // Filtrar localmente usando filtrosBackend (sin 'estado')
+  const allFilteredLocally = applyLocalTaskFilters(
     (res.data || []).map(mapDbTask),
-    filtros
-  )
-    .sort((a, b) => {
-      const pa = Number.isFinite(a.prioridad) ? a.prioridad : 999999;
-      const pb = Number.isFinite(b.prioridad) ? b.prioridad : 999999;
-      if (pa !== pb) return pa - pb;
-      return (b.id || 0) - (a.id || 0);
-    });
+    filtrosBackend
+  ).sort((a, b) => {
+    const pa = Number.isFinite(a.prioridad) ? a.prioridad : 999999;
+    const pb = Number.isFinite(b.prioridad) ? b.prioridad : 999999;
+    if (pa !== pb) return pa - pb;
+    return (b.id || 0) - (a.id || 0);
+  });
+
+  // Calculamos los contadores basados en el total de tareas resultantes de los otros filtros
+  actualizarCountsTabsAll(allFilteredLocally);
+
+  // Ahora sí, aplicamos el filtro de estado si existe
+  if (filtros.estado) {
+    const norm = String(filtros.estado).toLowerCase();
+    taskData = allFilteredLocally.filter(t => String(t.estado).toLowerCase() === norm);
+  } else {
+    taskData = allFilteredLocally;
+  }
   tbody.innerHTML = '';
 
   if (taskData.length === 0) {
@@ -1459,7 +1500,7 @@ async function moverPrioridad(delta) {
     return;
   }
   const t = taskData[selectedIdx];
-  const actual = Number(t.prioridad || 1);
+  const actual = Number(t.prioridad ?? 1);
   const nueva = Math.max(1, actual + delta);
   if (nueva === actual) return;
 
@@ -1553,6 +1594,16 @@ async function openModal(mode) {
   if (d) {
     document.getElementById('resp1').value = d.resp1Id || '';
     document.getElementById('resp2').value = d.resp2Id || '';
+  }
+
+  // REGLA: Si el admin está gestionando a un empleado concreto, forzar ese empleado en Resp2
+  // (Incluso en modificación, como pide el usuario: "ya se entiende que va a ser a ese empleado")
+  if (currentUserPersonalId && currentUserPersonalId !== loggedInPersonalId) {
+    const sel2 = document.getElementById('resp2');
+    if (sel2) {
+      sel2.value = String(currentUserPersonalId);
+      // No lo deshabilitamos para permitir flexibilidad, pero queda pre-seleccionado
+    }
   }
 
   // Sincronizar estado campos presupuesto según radio seleccionado
@@ -1721,8 +1772,8 @@ function populateForm(d, ro) {
     'f-fin': d ? (d.fFin || '') : '',
     'f-comprobacion': d ? (d.fComprobacion || '') : '',
     'f-espera': d ? (d.fEspera || '') : '',
-    'resp1': d ? (d.resp1Id || '') : '',
-    'resp2': d ? (d.resp2Id || '') : '',
+    'resp1': d ? (d.resp1Id || '') : (loggedInPersonalId || ''),
+    'resp2': d ? (d.resp2Id || '') : (currentUserPersonalId || ''),
     'tipo-tarea': d ? d.tipo : 'Diaria',
     'carpeta': d ? (d.carpetaTrabajo || '') : '',
     'descripcion': d ? d.desc : '',
@@ -2337,10 +2388,40 @@ document.addEventListener('DOMContentLoaded', async () => {
   const session = await invokeApi('auth:getSession');
   if (session.ok && session.data) {
     currentUserId = session.data.id;
-    currentUserPersonalId = session.data.idPersonal || null;
+    loggedInPersonalId = session.data.idPersonal;
+    currentUserPersonalId = session.data.isAdmin ? (session.data._adminTargetIdPersonal || session.data.idPersonal || null) : (session.data.idPersonal || null);
     currentUserNombre = session.data.nombre || '';
-    if (currentUserPersonalId == null && currentUserNombre) {
+    if (currentUserPersonalId == null && currentUserNombre && !session.data.isAdmin) {
       showToast('No se pudo resolver el usuario de la sesión.', 'warning');
+    }
+    const pwName = document.getElementById('pw-name');
+    if (pwName) pwName.textContent = currentUserNombre || 'Desconocido';
+    
+    if (session.data.isAdmin) {
+      const btnCambiarEmp = document.getElementById('btn-cambiar-empleado');
+      if (btnCambiarEmp) {
+        btnCambiarEmp.style.display = 'flex';
+        btnCambiarEmp.onclick = () => {
+          const backdrop = document.getElementById('admin-user-backdrop');
+          if (backdrop) backdrop.classList.add('open');
+          const searchInput = document.getElementById('admin-search-personal');
+          if (searchInput) {
+            searchInput.value = '';
+            // Trigger the render filter update
+            if (searchInput.oninput) searchInput.oninput({ target: searchInput });
+            setTimeout(() => searchInput.focus(), 100);
+          }
+        };
+      }
+      
+      // REGLA: Si ya tenemos un empleado seleccionado (p.ej. en una ventana secundaria), no volver a preguntar
+      if (session.data._adminTargetIdPersonal) {
+        // Intentar poner el nombre del empleado gestionado en la barra si lo tenemos
+        // Si no, al menos no bloqueamos con el modal.
+        // El nombre lo sacaremos del personalData más adelante o lo dejamos como está.
+      } else {
+        await requireAdminUserSelection();
+      }
     }
   }
 
@@ -2356,6 +2437,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   await cargarDatosBuscadores();
+
+  // Si somos admin y ya tenemos un empleado seleccionado (target), actualizar el nombre en la barra
+  if (currentUserPersonalId && loggedInPersonalId && currentUserPersonalId !== loggedInPersonalId) {
+    const p = personalData.find(x => String(x.id) === String(currentUserPersonalId));
+    if (p) {
+      const pwName = document.getElementById('pw-name');
+      if (pwName) pwName.textContent = p.nombre + ' (Admin)';
+    }
+  }
+
   setAsignadaFiltroSesion();
   setContactosPersonalSesion();
   applyContactosContextToUi();
@@ -2495,7 +2586,7 @@ function fichaje_aplicarEstado(estadoObj) {
  */
 async function fichaje_cargarEstado() {
   try {
-    const res = await invokeApi('presencia:getEstadoActual');
+    const res = await invokeApi('presencia:getEstadoActual', { idPersonal: currentUserPersonalId });
     if (res.ok) {
       fichaje_aplicarEstado(res.data);
     } else {
@@ -2548,7 +2639,8 @@ async function onFichajeClick() {
   try {
     const res = await invokeApi('presencia:registrarFichaje', {
       idControlPresenciaTipoEvento: siguienteEvento,
-      comentarios: ''
+      comentarios: '',
+      idPersonal: currentUserPersonalId
     });
     if (res.ok) {
       // Forzar recarga del estado para que el botón se actualice
@@ -2706,4 +2798,150 @@ function fichaje_mostrarMenuAccion(ops = []) {
   });
 }
 
+// ── CONNECTION WIDGET ──
+async function initConnectionWidget() {
+  const res = await window.api.invoke('db:getConfig').catch(() => null);
+  const dbText = (res && res.ok && res.data) ? res.data.database || 'Desconocida' : 'Error';
+  const serverText = (res && res.ok && res.data) ? res.data.server || 'Desconocido' : '---';
 
+  document.querySelectorAll('.statusbar').forEach(sb => {
+    const w = document.createElement('div');
+    w.className = 'connection-widget';
+    w.title = 'Cambiar conexión';
+    w.onclick = () => window.api.send('open-conexion');
+    w.innerHTML = `<div class="cw-dot"></div><div class="cw-text"><span class="cw-db">BD: ${dbText}</span><span class="cw-server">${serverText}</span></div>`;
+    
+    const leftWrap = document.createElement('div');
+    leftWrap.style.display = 'flex';
+    leftWrap.style.alignItems = 'center';
+    leftWrap.style.gap = '12px';
+    
+    const filter = sb.querySelector('.status-filter');
+    if (filter) {
+      sb.insertBefore(leftWrap, filter);
+      leftWrap.appendChild(filter);
+      leftWrap.appendChild(w);
+    }
+  });
+}
+
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => initConnectionWidget()); } else { initConnectionWidget(); }
+
+// ── ADMIN MODE ──
+function removeAccents(str) {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function requireAdminUserSelection() {
+  return new Promise(async (resolve) => {
+    const backdrop = document.getElementById('admin-user-backdrop');
+    if (backdrop) backdrop.classList.add('open');
+
+    const searchInput = document.getElementById('admin-search-personal');
+    const ulList = document.getElementById('admin-empleados-list');
+    const hiddenId = document.getElementById('admin-selected-id');
+    const btn = document.getElementById('btn-admin-user-confirm');
+    
+    let empleadosList = [];
+
+    if (ulList && searchInput && hiddenId) {
+      const res = await invokeApi('personal:getAll', {});
+      if (res.ok && res.data) {
+        empleadosList = res.data.map(p => ({
+          id: p.IdPersonal,
+          name: p.NombreCompleto || p.Nombre || 'Sin nombre',
+          searchStr: removeAccents((p.NombreCompleto || p.Nombre || '').toLowerCase())
+        }));
+        
+        const renderList = (filterText) => {
+          const lowerFilter = removeAccents((filterText || '').toLowerCase().trim());
+          const filtered = empleadosList.filter(e => e.searchStr.includes(lowerFilter));
+          
+          if (filtered.length === 0) {
+            ulList.innerHTML = '<li style="color:#94a3b8;cursor:default;">No se encontraron resultados</li>';
+          } else {
+            ulList.innerHTML = filtered.map(e => `<li data-id="${e.id}">${escapeHtml(e.name)}</li>`).join('');
+          }
+          ulList.style.display = 'block';
+          
+          // attach clicks
+          const lis = ulList.querySelectorAll('li[data-id]');
+          lis.forEach(li => {
+            li.onclick = () => {
+              searchInput.value = li.textContent;
+              hiddenId.value = li.getAttribute('data-id');
+              ulList.style.display = 'none';
+            };
+          });
+        };
+        
+        // Reset the value
+        searchInput.value = '';
+        hiddenId.value = '';
+        renderList('');
+        ulList.style.display = 'none'; // hide initially until focus
+        
+        searchInput.onfocus = () => {
+          renderList(searchInput.value);
+        };
+        
+        searchInput.oninput = (e) => {
+          hiddenId.value = ''; // clear selected on type
+          renderList(e.target.value);
+        };
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (e.target !== searchInput && e.target !== ulList && !ulList.contains(e.target)) {
+            ulList.style.display = 'none';
+          }
+        });
+
+      } else {
+        searchInput.placeholder = 'Error cargando empleados';
+      }
+    }
+
+    if (btn && searchInput) {
+      btn.onclick = async () => {
+        const selectedId = hiddenId ? hiddenId.value : '';
+        if (!selectedId) {
+          showToast('Por favor, selecciona un empleado de la lista.', 'warning');
+          return;
+        }
+        
+        const setRes = await invokeApi('auth:setAdminTarget', parseInt(selectedId));
+        if (!setRes.ok) {
+          showToast('Error configurando usuario: ' + (setRes.error || 'Desconocido'), 'error');
+          return;
+        }
+        currentUserPersonalId = Number.isFinite(Number(selectedId)) ? Number(selectedId) : selectedId;
+        
+        const pwName = document.getElementById('pw-name');
+        if (pwName) {
+           const selectedName = searchInput.value;
+           pwName.textContent = selectedName + ' (Admin)';
+        }
+        
+        if (backdrop) backdrop.classList.remove('open');
+        
+        // If this is triggered after initial load, refresh data
+        if (document.readyState === 'complete' && typeof cargarTareas === 'function') {
+           await cargarDatosBuscadores();
+           setAsignadaFiltroSesion();
+           setContactosPersonalSesion();
+           applyContactosContextToUi();
+           await ensureContactosClienteNombre();
+           if (!standalonePage || standalonePage === 'tareas') {
+             await cargarTareas();
+           }
+          // Refrescar estado de fichaje tras cambiar target admin
+          try { await fichaje_cargarEstado(); } catch (e) { console.warn('No se pudo recargar estado de fichaje tras cambiar admin target:', e); }
+        }
+        resolve();
+      };
+    } else {
+      resolve();
+    }
+  });
+}

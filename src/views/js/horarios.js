@@ -1,4 +1,4 @@
-﻿const state = {
+const state = {
   registros: [],
   selectedId: null,
   selectedRow: null,
@@ -382,6 +382,10 @@ async function cargarRegistros() {
 }
 
 async function eliminarRegistroHorario() {
+  if (!state.session?.isAdmin) {
+    showToast('Necesitas ser admin para realizar esta acción.', 'warning');
+    return;
+  }
   if (!state.selectedId) {
     showToast('Selecciona un registro primero.', 'warning');
     return;
@@ -462,6 +466,10 @@ async function guardarEdicionHorario() {
 }
 
 function abrirEdicionHorario() {
+  if (!state.session?.isAdmin) {
+    showToast('Necesitas ser admin para realizar esta acción.', 'warning');
+    return;
+  }
   if (!state.selectedId) {
     showToast('Selecciona un registro primero.', 'warning');
     return;
@@ -475,6 +483,10 @@ function abrirEdicionHorario() {
 }
 
 function abrirLogsHorarios() {
+  if (!state.session?.isAdmin) {
+    showToast('Necesitas ser admin para realizar esta acción.', 'warning');
+    return;
+  }
   if (window.api && window.api.send) {
     window.api.send('horariosLogs:open');
   }
@@ -489,6 +501,16 @@ async function init() {
     if (label) label.textContent = nombre;
     if (session.data.idPersonal == null) {
       showToast('No se pudo resolver el usuario de la sesion.', 'warning');
+    }
+    
+    // Ocultar botones de admin si no lo es
+    if (!session.data.isAdmin) {
+      const btnEdit = document.getElementById('btn-horario-editar');
+      const btnDel = document.getElementById('btn-horario-eliminar');
+      const btnLogs = document.getElementById('btn-horario-logs');
+      if (btnEdit) btnEdit.style.display = 'none';
+      if (btnDel) btnDel.style.display = 'none';
+      if (btnLogs) btnLogs.style.display = 'none';
     }
   }
 
